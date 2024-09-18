@@ -307,7 +307,7 @@ bool DDGBuilder::shouldCreatePiBlocks() const { return CreatePiBlocks; }
 DDGAnalysis::Result DDGAnalysis::run(Loop &L, LoopAnalysisManager &AM,
                                      LoopStandardAnalysisResults &AR) {
   Function *F = L.getHeader()->getParent();
-  DependenceInfo DI(F, &AR.AA, &AR.SE, &AR.LI);
+  DependenceInfo DI(F, &AR.AA, &AR.SE, &AR.LI, AR.MSSA);
   return std::make_unique<DataDependenceGraph>(L, AR.LI, DI);
 }
 AnalysisKey DDGAnalysis::Key;

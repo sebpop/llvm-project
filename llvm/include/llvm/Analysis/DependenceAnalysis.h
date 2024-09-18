@@ -49,6 +49,7 @@ namespace llvm {
   template <typename T> class ArrayRef;
   class Loop;
   class LoopInfo;
+  class MemorySSA;
   class ScalarEvolution;
   class SCEV;
   class SCEVConstant;
@@ -293,8 +294,8 @@ namespace llvm {
   class DependenceInfo {
   public:
     DependenceInfo(Function *F, AAResults *AA, ScalarEvolution *SE,
-                   LoopInfo *LI)
-        : AA(AA), SE(SE), LI(LI), F(F) {}
+                   LoopInfo *LI, MemorySSA *MSSA)
+        : AA(AA), SE(SE), LI(LI), F(F), MSSA(MSSA) {}
 
     /// Handle transitive invalidation when the cached analysis results go away.
     bool invalidate(Function &F, const PreservedAnalyses &PA,
@@ -359,6 +360,7 @@ namespace llvm {
     ScalarEvolution *SE;
     LoopInfo *LI;
     Function *F;
+    MemorySSA *MSSA;
 
     /// Subscript - This private struct represents a pair of subscripts from
     /// a pair of potentially multi-dimensional array references. We use a

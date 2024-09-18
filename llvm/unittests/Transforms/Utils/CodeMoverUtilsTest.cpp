@@ -11,6 +11,7 @@
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/DependenceAnalysis.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/AsmParser/Parser.h"
@@ -43,8 +44,9 @@ static void run(Module &M, StringRef FuncName,
   AssumptionCache AC(*F);
   AliasAnalysis AA(TLI);
   LoopInfo LI(DT);
+  MemorySSA MSSA(*F, &AA, &DT);
   ScalarEvolution SE(*F, TLI, AC, DT, LI);
-  DependenceInfo DI(F, &AA, &SE, &LI);
+  DependenceInfo DI(F, &AA, &SE, &LI, &MSSA);
   Test(*F, DT, PDT, DI);
 }
 
@@ -752,10 +754,10 @@ entry:
         // No flow backward dependency
         EXPECT_TRUE(isSafeToMoveBefore(*LoadA1, *StoreB0, DT, &PDT, &DI));
 
-        // No anti backward dependency
-        EXPECT_TRUE(isSafeToMoveBefore(*StoreB0, *LoadA0, DT, &PDT, &DI));
-        // No anti forward dependency
-        EXPECT_TRUE(isSafeToMoveBefore(*LoadA0, *LoadA1, DT, &PDT, &DI));
+        // MemorySSA says it's unsafe to move StoreB0 past LoadA0.
+        EXPECT_FALSE(isSafeToMoveBefore(*StoreB0, *LoadA0, DT, &PDT, &DI));
+        // Can't move loadA0 past storeB0.
+        EXPECT_FALSE(isSafeToMoveBefore(*LoadA0, *LoadA1, DT, &PDT, &DI));
       });
 }
 
@@ -877,9 +879,9 @@ TEST(CodeMoverUtils, IsSafeToMoveTest6) {
         // No flow backward dependency
         EXPECT_TRUE(isSafeToMoveBefore(*LoadA1, StoreB0, DT, &PDT, &DI));
 
-        // No anti backward dependency
-        EXPECT_TRUE(isSafeToMoveBefore(StoreB0, *LoadA0, DT, &PDT, &DI));
-        // No anti forward dependency
-        EXPECT_TRUE(isSafeToMoveBefore(*LoadA0, *LoadA1, DT, &PDT, &DI));
+        // MemorySSA says it's unsafe to move StoreB0 past LoadA0.
+        EXPECT_FALSE(isSafeToMoveBefore(StoreB0, *LoadA0, DT, &PDT, &DI));
+        // MemorySSA says it's unsafe to move LoadA0 past storeB0.
+        EXPECT_FALSE(isSafeToMoveBefore(*LoadA0, *LoadA1, DT, &PDT, &DI));
       });
 }

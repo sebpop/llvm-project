@@ -1714,7 +1714,7 @@ PreservedAnalyses LoopInterchangePass::run(LoopNest &LN,
                                            LPMUpdater &U) {
   Function &F = *LN.getParent();
 
-  DependenceInfo DI(&F, &AR.AA, &AR.SE, &AR.LI);
+  DependenceInfo DI(&F, &AR.AA, &AR.SE, &AR.LI, AR.MSSA);
   std::unique_ptr<CacheCost> CC =
       CacheCost::getCacheCost(LN.getOutermostLoop(), AR, DI);
   OptimizationRemarkEmitter ORE(&F);

@@ -455,7 +455,7 @@ PreservedAnalyses LoopUnrollAndJamPass::run(LoopNest &LN,
                                             LPMUpdater &U) {
   Function &F = *LN.getParent();
 
-  DependenceInfo DI(&F, &AR.AA, &AR.SE, &AR.LI);
+  DependenceInfo DI(&F, &AR.AA, &AR.SE, &AR.LI, AR.MSSA);
   OptimizationRemarkEmitter ORE(&F);
 
   if (!tryToUnrollAndJamLoop(LN, AR.DT, AR.LI, AR.SE, AR.TTI, AR.AC, DI, ORE,

@@ -1008,7 +1008,7 @@ private:
 /// you.
 /// In particular, while the def-use chains provide basic information, and are
 /// guaranteed to give, for example, the nearest may-aliasing MemoryDef for a
-/// MemoryUse as AliasAnalysis considers it, a user mant want better or other
+/// MemoryUse as AliasAnalysis considers it, a user may want better or other
 /// information. In particular, they may want to use SCEV info to further
 /// disambiguate memory accesses, or they may want the nearest dominating
 /// may-aliasing MemoryDef for a call or a store. This API enables a

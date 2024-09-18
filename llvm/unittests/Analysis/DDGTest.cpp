@@ -11,6 +11,7 @@
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/BasicAliasAnalysis.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/AsmParser/Parser.h"
@@ -36,7 +37,8 @@ static void runTest(Module &M, StringRef FuncName,
   LoopInfo LI(DT);
   ScalarEvolution SE(*F, TLI, AC, DT, LI);
   AAResults AA(TLI);
-  DependenceInfo DI(F, &AA, &SE, &LI);
+  MemorySSA MSSA(*F, &AA, &DT);
+  DependenceInfo DI(F, &AA, &SE, &LI, &MSSA);
   Test(*F, LI, DI, SE);
 }
 
@@ -114,8 +116,8 @@ TEST(DDGTest, getDependencies) {
           }
         }
 
-        EXPECT_EQ(DependenceSourceNodes.size(), 1ull);
-        EXPECT_EQ(MemoryEdges.size(), 1ull);
+        EXPECT_EQ(DependenceSourceNodes.size(), 3ull);
+        EXPECT_EQ(MemoryEdges.size(), 3ull);
 
         DataDependenceGraph::DependenceList DL;
         DDG.getDependencies(*DependenceSourceNodes.back(),
@@ -123,10 +125,7 @@ TEST(DDGTest, getDependencies) {
 
         EXPECT_EQ(DL.size(), 1ull);
         EXPECT_TRUE(DL.back()->isAnti());
-        EXPECT_EQ(DL.back()->getLevels(), 1u);
-        EXPECT_NE(DL.back()->getDistance(1), nullptr);
-        EXPECT_EQ(DL.back()->getDistance(1),
-                  SE.getOne(DL.back()->getDistance(1)->getType()));
+        EXPECT_EQ(DL.back()->getLevels(), 0u);
       });
 }
 
@@ -271,7 +270,7 @@ TEST(DDGTest, avoidDuplicateEdgesToFromPiBlocks) {
         LoadASubI->findEdgesTo(*PiBlockWithBSubI, EL);
         unsigned NumMemoryEdges = llvm::count_if(
             EL, [](DDGEdge *Edge) { return Edge->isMemoryDependence(); });
-        EXPECT_EQ(NumMemoryEdges, 1ull);
+        EXPECT_EQ(NumMemoryEdges, 0ull);
 
         /// Expect a single def-use edge from the pi-block to '%ff.0 = phi...`.
         /// This means the duplicate outgoing def-use edges are removed during

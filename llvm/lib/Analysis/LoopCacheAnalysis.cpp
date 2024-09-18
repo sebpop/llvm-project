@@ -736,7 +736,7 @@ PreservedAnalyses LoopCachePrinterPass::run(Loop &L, LoopAnalysisManager &AM,
                                             LoopStandardAnalysisResults &AR,
                                             LPMUpdater &U) {
   Function *F = L.getHeader()->getParent();
-  DependenceInfo DI(F, &AR.AA, &AR.SE, &AR.LI);
+  DependenceInfo DI(F, &AR.AA, &AR.SE, &AR.LI, AR.MSSA);
 
   if (auto CC = CacheCost::getCacheCost(L, AR, DI))
     OS << *CC;

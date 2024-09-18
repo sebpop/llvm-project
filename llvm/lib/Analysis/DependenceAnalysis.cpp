@@ -54,6 +54,7 @@
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/Delinearization.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Analysis/ValueTracking.h"
@@ -129,7 +130,9 @@ DependenceAnalysis::run(Function &F, FunctionAnalysisManager &FAM) {
   auto &AA = FAM.getResult<AAManager>(F);
   auto &SE = FAM.getResult<ScalarEvolutionAnalysis>(F);
   auto &LI = FAM.getResult<LoopAnalysis>(F);
-  return DependenceInfo(&F, &AA, &SE, &LI);
+  MemorySSA &MSSA = FAM.getResult<MemorySSAAnalysis>(F).getMSSA();
+
+  return DependenceInfo(&F, &AA, &SE, &LI, &MSSA);
 }
 
 AnalysisKey DependenceAnalysis::Key;
@@ -139,6 +142,7 @@ INITIALIZE_PASS_BEGIN(DependenceAnalysisWrapperPass, "da",
 INITIALIZE_PASS_DEPENDENCY(LoopInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(ScalarEvolutionWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
 INITIALIZE_PASS_END(DependenceAnalysisWrapperPass, "da", "Dependence Analysis",
                     true, true)
 
@@ -157,7 +161,9 @@ bool DependenceAnalysisWrapperPass::runOnFunction(Function &F) {
   auto &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
   auto &SE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
   auto &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-  info.reset(new DependenceInfo(&F, &AA, &SE, &LI));
+  auto &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
+
+  info.reset(new DependenceInfo(&F, &AA, &SE, &LI, &MSSA));
   return false;
 }
 
@@ -168,6 +174,7 @@ void DependenceAnalysisWrapperPass::releaseMemory() { info.reset(); }
 void DependenceAnalysisWrapperPass::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
   AU.addRequiredTransitive<AAResultsWrapperPass>();
+  AU.addRequired<MemorySSAWrapperPass>();
   AU.addRequiredTransitive<ScalarEvolutionWrapperPass>();
   AU.addRequiredTransitive<LoopInfoWrapperPass>();
 }
@@ -707,23 +714,63 @@ void Dependence::dump(raw_ostream &OS) const {
   OS << "!\n";
 }
 
+// Walk memorySSA use-def chains and check whether instructions A and B are
+// defined by the same dominating MemoryAccess.
+static bool dominatedBySameDef(MemorySSA *MSSA, Instruction *A,
+                               Instruction *B) {
+  if (!MSSA) {
+    // FIXME: The conservative answer is to return true, that is, "yes, there
+    // may be dependences."  We currently return false as otherwise we would
+    // generate a lot of fails from the passes that have not yet been converted
+    // to use Memory SSA.
+    return false;
+
+    // FIXME: remove the above return and enable this error after all passes
+    // using DA are converted to preserve Memory SSA.
+    report_fatal_error("DA requires MemorySSA (loop-mssa)", false);
+  }
+
+  // Use a MemorySSAWalker to further disambiguate the def-use chains.
+  MemorySSAWalker *W = MSSA->getSkipSelfWalker();
+
+  // Compute the nearest dominating MemoryAccess that modifies the memory
+  // location the instruction accesses.
+  auto *DomA = W->getClobberingMemoryAccess(A);
+  auto *DomB = W->getClobberingMemoryAccess(B);
+
+  // In MemorySSA all use-def chains end on liveOnEntry. There are no
+  // dependences when both dominating MemoryAccess'es are liveOnEntry.
+  if (MSSA->isLiveOnEntryDef(DomA) && MSSA->isLiveOnEntryDef(DomB))
+    return false;
+
+  // There may be a dependence when instructions are dominated by the same
+  // MemoryAccess.
+  if (DomA == DomB)
+    return true;
+
+  return false;
+}
+
 // Returns NoAlias/MayAliass/MustAlias for two memory locations based upon their
 // underlaying objects. If LocA and LocB are known to not alias (for any reason:
 // tbaa, non-overlapping regions etc), then it is known there is no dependecy.
 // Otherwise the underlying objects are checked to see if they point to
 // different identifiable objects.
-static AliasResult underlyingObjectsAlias(AAResults *AA,
-                                          const DataLayout &DL,
-                                          const MemoryLocation &LocA,
-                                          const MemoryLocation &LocB) {
+static AliasResult underlyingObjectsAlias(AAResults *AA, MemorySSA *MSSA,
+                                          Instruction *A, Instruction *B) {
+  const MemoryLocation &LocA = MemoryLocation::get(A);
+  const MemoryLocation &LocB = MemoryLocation::get(B);
   // Check the original locations (minus size) for noalias, which can happen for
   // tbaa, incompatible underlying object locations, etc.
   MemoryLocation LocAS =
       MemoryLocation::getBeforeOrAfter(LocA.Ptr, LocA.AATags);
   MemoryLocation LocBS =
       MemoryLocation::getBeforeOrAfter(LocB.Ptr, LocB.AATags);
-  if (AA->isNoAlias(LocAS, LocBS))
+  if (AA->isNoAlias(LocAS, LocBS)) {
+    if (dominatedBySameDef(MSSA, A, B))
+      return AliasResult::MayAlias;
     return AliasResult::NoAlias;
+  }
 
   // Check the underlying objects are the same
   const Value *AObj = getUnderlyingObject(LocA.Ptr);
@@ -736,6 +783,9 @@ static AliasResult underlyingObjectsAlias(AAResults *AA,
   // We may have hit the recursion limit for underlying objects, or have
   // underlying objects where we don't know they will alias.
   if (!isIdentifiedObject(AObj) || !isIdentifiedObject(BObj))
+    return AliasResult::MayAlias;
+
+  if (dominatedBySameDef(MSSA, A, B))
     return AliasResult::MayAlias;
 
   // Otherwise we know the objects are different and both identified objects so
@@ -3606,9 +3656,7 @@ DependenceInfo::depends(Instruction *Src, Instruction *Dst,
   Value *SrcPtr = getLoadStorePointerOperand(Src);
   Value *DstPtr = getLoadStorePointerOperand(Dst);
 
-  switch (underlyingObjectsAlias(AA, F->getDataLayout(),
-                                 MemoryLocation::get(Dst),
-                                 MemoryLocation::get(Src))) {
+  switch (underlyingObjectsAlias(AA, MSSA, Dst, Src)) {
   case AliasResult::MayAlias:
   case AliasResult::PartialAlias:
     // cannot analyse objects if we don't understand their aliasing.
@@ -4030,11 +4078,7 @@ const SCEV *DependenceInfo::getSplitIteration(const Dependence &Dep,
   assert(Dst->mayReadFromMemory() || Dst->mayWriteToMemory());
   assert(isLoadOrStore(Src));
   assert(isLoadOrStore(Dst));
-  Value *SrcPtr = getLoadStorePointerOperand(Src);
-  Value *DstPtr = getLoadStorePointerOperand(Dst);
-  assert(underlyingObjectsAlias(
-             AA, F->getDataLayout(), MemoryLocation::get(Dst),
-             MemoryLocation::get(Src)) == AliasResult::MustAlias);
+  assert(underlyingObjectsAlias(AA, MSSA, Dst, Src) == AliasResult::MustAlias);
 
   // establish loop nesting levels
   establishNestingLevels(Src, Dst);
@@ -4043,6 +4087,8 @@ const SCEV *DependenceInfo::getSplitIteration(const Dependence &Dep,
 
   unsigned Pairs = 1;
   SmallVector<Subscript, 2> Pair(Pairs);
+  Value *SrcPtr = getLoadStorePointerOperand(Src);
+  Value *DstPtr = getLoadStorePointerOperand(Dst);
   const SCEV *SrcSCEV = SE->getSCEV(SrcPtr);
   const SCEV *DstSCEV = SE->getSCEV(DstPtr);
   Pair[0].Src = SrcSCEV;
