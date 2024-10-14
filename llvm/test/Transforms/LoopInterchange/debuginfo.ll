@@ -1,5 +1,5 @@
 ; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -pass-remarks='loop-interchange' -pass-remarks-output=%t -S \
-; RUN:     -verify-dom-info -verify-loop-info | FileCheck %s
+; RUN:     -verify-dom-info -verify-loop-info -verify-memoryssa | FileCheck %s
 ; RUN: FileCheck -check-prefix=REMARK --input-file=%t %s
 
 

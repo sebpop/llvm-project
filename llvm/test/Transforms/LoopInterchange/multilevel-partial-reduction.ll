@@ -1,5 +1,5 @@
 ; RUN: opt < %s -passes=loop-interchange -cache-line-size=4 -pass-remarks-missed='loop-interchange' -pass-remarks-output=%t -S \
-; RUN:     -verify-dom-info -verify-loop-info -verify-loop-lcssa
+; RUN:     -verify-dom-info -verify-loop-info -verify-loop-lcssa -verify-memoryssa
 ; RUN: FileCheck --input-file=%t --check-prefix=REMARKS %s
 
 @b = external global [512 x [4 x i32]]

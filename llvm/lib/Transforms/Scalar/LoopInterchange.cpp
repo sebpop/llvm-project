@@ -22,6 +22,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/LoopNestAnalysis.h"
 #include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/MemorySSAUpdater.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
@@ -333,8 +334,10 @@ class LoopInterchangeTransform {
 public:
   LoopInterchangeTransform(Loop *Outer, Loop *Inner, ScalarEvolution *SE,
                            LoopInfo *LI, DominatorTree *DT,
-                           const LoopInterchangeLegality &LIL)
-      : OuterLoop(Outer), InnerLoop(Inner), SE(SE), LI(LI), DT(DT), LIL(LIL) {}
+                           const LoopInterchangeLegality &LIL,
+                           MemorySSAUpdater &MSSAU)
+      : OuterLoop(Outer), InnerLoop(Inner), SE(SE), LI(LI), DT(DT), LIL(LIL),
+        MSSAU(MSSAU) {}
 
   /// Interchange OuterLoop and InnerLoop.
   bool transform();
@@ -350,13 +353,11 @@ private:
   Loop *OuterLoop;
   Loop *InnerLoop;
 
-  /// Scev analysis.
   ScalarEvolution *SE;
-
   LoopInfo *LI;
   DominatorTree *DT;
-
   const LoopInterchangeLegality &LIL;
+  MemorySSAUpdater &MSSAU;
 };
 
 struct LoopInterchange {
@@ -364,15 +365,18 @@ struct LoopInterchange {
   LoopInfo *LI = nullptr;
   DependenceInfo *DI = nullptr;
   DominatorTree *DT = nullptr;
+  MemorySSA *MSSA = nullptr;
   std::unique_ptr<CacheCost> CC = nullptr;
 
   /// Interface to emit optimization remarks.
   OptimizationRemarkEmitter *ORE;
 
   LoopInterchange(ScalarEvolution *SE, LoopInfo *LI, DependenceInfo *DI,
-                  DominatorTree *DT, std::unique_ptr<CacheCost> &CC,
+                  DominatorTree *DT, MemorySSA *MSSA,
+                  std::unique_ptr<CacheCost> &CC,
                   OptimizationRemarkEmitter *ORE)
-      : SE(SE), LI(LI), DI(DI), DT(DT), CC(std::move(CC)), ORE(ORE) {}
+      : SE(SE), LI(LI), DI(DI), DT(DT), MSSA(MSSA), CC(std::move(CC)),
+        ORE(ORE) {}
 
   bool run(Loop *L) {
     if (L->getParentLoop())
@@ -526,7 +530,8 @@ struct LoopInterchange {
              << "Loop interchanged with enclosing loop.";
     });
 
-    LoopInterchangeTransform LIT(OuterLoop, InnerLoop, SE, LI, DT, LIL);
+    MemorySSAUpdater MSSAU(MSSA);
+    LoopInterchangeTransform LIT(OuterLoop, InnerLoop, SE, LI, DT, LIL, MSSAU);
     LIT.transform();
     LLVM_DEBUG(dbgs() << "Loops interchanged.\n");
     LoopsInterchanged++;
@@ -1310,7 +1315,7 @@ bool LoopInterchangeTransform::transform() {
     // new latch block.
     BasicBlock *NewLatch =
         SplitBlock(InnerLoop->getLoopLatch(),
-                   InnerLoop->getLoopLatch()->getTerminator(), DT, LI);
+                   InnerLoop->getLoopLatch()->getTerminator(), DT, LI, &MSSAU);
 
     SmallSetVector<Instruction *, 4> WorkList;
     unsigned i = 0;
@@ -1358,7 +1363,7 @@ bool LoopInterchangeTransform::transform() {
   // Ensure the inner loop phi nodes have a separate basic block.
   BasicBlock *InnerLoopHeader = InnerLoop->getHeader();
   if (InnerLoopHeader->getFirstNonPHI() != InnerLoopHeader->getTerminator()) {
-    SplitBlock(InnerLoopHeader, InnerLoopHeader->getFirstNonPHI(), DT, LI);
+    SplitBlock(InnerLoopHeader, InnerLoopHeader->getFirstNonPHI(), DT, LI, &MSSAU);
     LLVM_DEBUG(dbgs() << "splitting InnerLoopHeader done\n");
   }
 
@@ -1383,6 +1388,9 @@ bool LoopInterchangeTransform::transform() {
     return false;
   }
 
+  if (VerifyMemorySSA)
+    MSSAU.getMemorySSA()->verifyMemorySSA();
+
   return true;
 }
 
@@ -1396,7 +1404,7 @@ static void moveBBContents(BasicBlock *FromBB, Instruction *InsertBefore) {
 }
 
 /// Swap instructions between \p BB1 and \p BB2 but keep terminators intact.
-static void swapBBContents(BasicBlock *BB1, BasicBlock *BB2) {
+static void swapBBContents(BasicBlock *BB1, BasicBlock *BB2, MemorySSAUpdater &MSSAU) {
   // Save all non-terminator instructions of BB1 into TempInstrs and unlink them
   // from BB1 afterwards.
   auto Iter = map_range(*BB1, [](Instruction &I) { return &I; });
@@ -1406,10 +1414,12 @@ static void swapBBContents(BasicBlock *BB1, BasicBlock *BB2) {
 
   // Move instructions from BB2 to BB1.
   moveBBContents(BB2, BB1->getTerminator());
+  MSSAU.moveAllAccesses(BB2, BB1, BB1->getFirstNonPHI());
 
   // Move instructions from TempInstrs to BB2.
   for (Instruction *I : TempInstrs)
     I->insertBefore(BB2->getTerminator());
+  MSSAU.moveAllAccesses(BB1, BB2, BB2->getFirstNonPHI());
 }
 
 // Update BI to jump to NewBB instead of OldBB. Records updates to the
@@ -1639,7 +1649,10 @@ bool LoopInterchangeTransform::adjustLoopBranches() {
   updateSuccessor(OuterLoopLatchBI, OuterLoopLatchSuccessor, InnerLoopLatch,
                   DTUpdates);
 
-  DT->applyUpdates(DTUpdates);
+  MSSAU.applyUpdates(DTUpdates, *DT, /*UpdateDT=*/true);
+  if (VerifyMemorySSA)
+    MSSAU.getMemorySSA()->verifyMemorySSA();
+
   restructureLoops(OuterLoop, InnerLoop, InnerLoopPreHeader,
                    OuterLoopPreHeader);
 
@@ -1703,7 +1716,10 @@ bool LoopInterchangeTransform::adjustLoopLinks() {
     // preheader was previously executed inside the outer loop.
     BasicBlock *OuterLoopPreHeader = OuterLoop->getLoopPreheader();
     BasicBlock *InnerLoopPreHeader = InnerLoop->getLoopPreheader();
-    swapBBContents(OuterLoopPreHeader, InnerLoopPreHeader);
+    swapBBContents(OuterLoopPreHeader, InnerLoopPreHeader, MSSAU);
+
+    if (VerifyMemorySSA)
+      MSSAU.getMemorySSA()->verifyMemorySSA();
   }
   return Changed;
 }
@@ -1712,14 +1728,19 @@ PreservedAnalyses LoopInterchangePass::run(LoopNest &LN,
                                            LoopAnalysisManager &AM,
                                            LoopStandardAnalysisResults &AR,
                                            LPMUpdater &U) {
+  if (!AR.MSSA)
+    report_fatal_error("LoopInterchange requires MemorySSA (loop-mssa)",
+                       /*GenCrashDiag*/false);
   Function &F = *LN.getParent();
 
   DependenceInfo DI(&F, &AR.AA, &AR.SE, &AR.LI, AR.MSSA);
   std::unique_ptr<CacheCost> CC =
       CacheCost::getCacheCost(LN.getOutermostLoop(), AR, DI);
   OptimizationRemarkEmitter ORE(&F);
-  if (!LoopInterchange(&AR.SE, &AR.LI, &DI, &AR.DT, CC, &ORE).run(LN))
+  if (!LoopInterchange(&AR.SE, &AR.LI, &DI, &AR.DT, AR.MSSA, CC, &ORE).run(LN))
     return PreservedAnalyses::all();
   U.markLoopNestChanged(true);
-  return getLoopPassPreservedAnalyses();
+  auto PA = getLoopPassPreservedAnalyses();
+  PA.preserve<MemorySSAAnalysis>();
+  return PA;
 }

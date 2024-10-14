@@ -1,6 +1,6 @@
 ; REQUIRES: asserts
 ; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -verify-dom-info -verify-loop-info \
-; RUN:     -S -debug 2>&1 | FileCheck %s
+; RUN:     -verify-memoryssa -S -debug 2>&1 | FileCheck %s
 
 @a = common global i32 0, align 4
 @d = common dso_local local_unnamed_addr global [1 x [6 x i32]] zeroinitializer, align 4

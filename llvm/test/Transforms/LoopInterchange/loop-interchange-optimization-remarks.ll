@@ -2,12 +2,12 @@
 ;
 ; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -verify-dom-info -verify-loop-info \
 ; RUN:     -pass-remarks-output=%t -pass-remarks-missed='loop-interchange' \
-; RUN:     -pass-remarks='loop-interchange' -S
+; RUN:     -pass-remarks='loop-interchange' -verify-memoryssa -S
 ; RUN: cat %t |  FileCheck %s
 
 ; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -verify-dom-info -verify-loop-info \
 ; RUN:     -pass-remarks-output=%t -pass-remarks-missed='loop-interchange' \
-; RUN:     -pass-remarks='loop-interchange' -S -da-disable-delinearization-checks
+; RUN:     -pass-remarks='loop-interchange' -S -da-disable-delinearization-checks -verify-memoryssa
 ; RUN: cat %t |  FileCheck --check-prefix=DELIN %s
 
 @A = common global [100 x [100 x i32]] zeroinitializer

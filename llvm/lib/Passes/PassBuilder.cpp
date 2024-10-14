@@ -1364,7 +1364,8 @@ static bool isLoopNestPassName(StringRef Name, CallbacksT &Callbacks,
                                bool &UseMemorySSA) {
   UseMemorySSA = false;
 
-  if (PassBuilder::checkParametrizedPassName(Name, "lnicm")) {
+  if (Name == "loop-interchange" ||
+      PassBuilder::checkParametrizedPassName(Name, "lnicm")) {
     UseMemorySSA = true;
     return true;
   }

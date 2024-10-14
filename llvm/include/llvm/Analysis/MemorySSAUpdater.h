@@ -129,6 +129,8 @@ public:
   void moveAfter(MemoryUseOrDef *What, MemoryUseOrDef *Where);
   void moveToPlace(MemoryUseOrDef *What, BasicBlock *BB,
                    MemorySSA::InsertionPlace Where);
+  /// Move all memory accesses from `From` to `To` starting at `Start`.
+  void moveAllAccesses(BasicBlock *From, BasicBlock *To, Instruction *Start);
   /// `From` block was spliced into `From` and `To`. There is a CFG edge from
   /// `From` to `To`. Move all accesses from `From` to `To` starting at
   /// instruction `Start`. `To` is newly created BB, so empty of
@@ -242,9 +244,6 @@ private:
   // Move What before Where in the MemorySSA IR.
   template <class WhereType>
   void moveTo(MemoryUseOrDef *What, BasicBlock *BB, WhereType Where);
-  // Move all memory accesses from `From` to `To` starting at `Start`.
-  // Restrictions apply, see public wrappers of this method.
-  void moveAllAccesses(BasicBlock *From, BasicBlock *To, Instruction *Start);
   MemoryAccess *getPreviousDef(MemoryAccess *);
   MemoryAccess *getPreviousDefInBlock(MemoryAccess *);
   MemoryAccess *

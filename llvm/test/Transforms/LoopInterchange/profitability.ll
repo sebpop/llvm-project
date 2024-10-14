@@ -1,8 +1,10 @@
-; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -pass-remarks-output=%t -verify-dom-info -verify-loop-info \
+; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -pass-remarks-output=%t \
+; RUN:     -verify-memoryssa -verify-dom-info -verify-loop-info \
 ; RUN:     -pass-remarks=loop-interchange -pass-remarks-missed=loop-interchange
 ; RUN: FileCheck -input-file %t %s
 
 ; RUN: opt < %s -passes=loop-interchange,loop-interchange -cache-line-size=64 \
+; RUN:     -verify-memoryssa -verify-dom-info -verify-loop-info \
 ; RUN:     -pass-remarks-output=%t -pass-remarks='loop-interchange' -S
 ; RUN: cat %t |  FileCheck --check-prefix=PROFIT %s
 

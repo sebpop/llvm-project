@@ -1,5 +1,5 @@
 ; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -pass-remarks-missed='loop-interchange' \
-; RUN:   -pass-remarks-output=%t -verify-loop-info -verify-dom-info -S | FileCheck -check-prefix=IR %s
+; RUN:   -pass-remarks-output=%t -verify-loop-info -verify-dom-info -verify-memoryssa -S | FileCheck -check-prefix=IR %s
 ; RUN: FileCheck --input-file=%t %s
 
 ; RUN: opt < %s -passes=loop-interchange -cache-line-size=64 -pass-remarks-missed='loop-interchange' \
