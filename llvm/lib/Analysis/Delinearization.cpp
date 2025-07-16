@@ -744,7 +744,8 @@ namespace {
 
 void printDelinearization(raw_ostream &O, Function *F, LoopInfo *LI,
                           ScalarEvolution *SE) {
-  O << "Delinearization on function " << F->getName() << ":\n";
+  O << "Printing analysis 'Delinearization' for function '" << F->getName()
+    << "':";
   for (Instruction &Inst : instructions(F)) {
     // Only analyze loads and stores.
     if (!isa<StoreInst>(&Inst) && !isa<LoadInst>(&Inst) &&
