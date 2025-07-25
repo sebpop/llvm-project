@@ -15,7 +15,7 @@ define void @mat_mul(ptr %C, ptr %A, ptr %B, i64 %N) #0 !kernel_arg_addr_space !
 ; CHECK-NEXT:  In Loop with Header: for.inc
 ; CHECK-NEXT:  AccessFunction: {(4 * %N * %call),+,4}<%for.inc>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%N] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[%call][{0,+,1}<nuw><nsw><%for.inc>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: %arrayidx4 = getelementptr inbounds float, ptr %B, i64 %add3
@@ -27,7 +27,7 @@ define void @mat_mul(ptr %C, ptr %A, ptr %B, i64 %N) #0 !kernel_arg_addr_space !
 ; CHECK-NEXT:  In Loop with Header: for.inc
 ; CHECK-NEXT:  AccessFunction: {(4 * %call1),+,(4 * %N)}<%for.inc>
 ; CHECK-NEXT:  Base offset: %B
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%N] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.inc>][%call1]
 ;
 entry:

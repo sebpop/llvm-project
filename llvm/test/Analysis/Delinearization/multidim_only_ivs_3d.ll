@@ -30,22 +30,22 @@ define void @foo(i64 %n, i64 %m, i64 %o, ptr %A) {
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,(8 * %m * %o)}<%for.i>,+,(8 * %o)}<%for.j>,+,8}<%for.k>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][%o] with elements of 8 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i>][{0,+,1}<nuw><nsw><%for.j>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %idx, align 8
 ; CHECK-NEXT:  In Loop with Header: for.j
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}(-8 + (8 * %o)),+,(8 * %m * %o)}<%for.i>,+,(8 * %o)}<%for.j>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][%o] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i>][{1,+,1}<nuw><nsw><%for.j>][-1]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i>][{0,+,1}<nuw><nsw><%for.j>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %idx, align 8
 ; CHECK-NEXT:  In Loop with Header: for.i
 ; CHECK-NEXT:  AccessFunction: {(-8 + (8 * %m * %o)),+,(8 * %m * %o)}<%for.i>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(%m * %o)] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[0][{(-1 + (%m * %o)),+,(%m * %o)}<%for.i>]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i>][{0,+,1}<nuw><nsw><%for.j>][{0,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
   br label %for.i

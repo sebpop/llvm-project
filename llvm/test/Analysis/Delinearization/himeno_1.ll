@@ -50,22 +50,22 @@ define void @jacobi(i32 %nn, ptr nocapture %a, ptr nocapture %p) nounwind uwtabl
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}(4 + (4 * (sext i32 %a.deps to i64) * (1 + (sext i32 %a.cols to i64))<nsw>)),+,(4 * (sext i32 %a.deps to i64) * (sext i32 %a.cols to i64))}<%for.i>,+,(4 * (sext i32 %a.deps to i64))<nsw>}<%for.j>,+,4}<%for.k>
 ; CHECK-NEXT:  Base offset: %a.base
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %a.cols to i64)][(sext i32 %a.deps to i64)] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{1,+,1}<nuw><nsw><%for.i>][{1,+,1}<nuw><nsw><%for.j>][{1,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store float 1.000000e+00, ptr %arrayidx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}(-4 + (4 * (sext i32 (-1 + %p.deps) to i64))<nsw> + (4 * (sext i32 %a.deps to i64) * (1 + (sext i32 %a.cols to i64))<nsw>)),+,(4 * (sext i32 %a.deps to i64) * (sext i32 %a.cols to i64))}<%for.i>,+,(4 * (sext i32 %a.deps to i64))<nsw>}<%for.j>
 ; CHECK-NEXT:  Base offset: %a.base
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %a.cols to i64)][(sext i32 %a.deps to i64)] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{1,+,1}<nuw><nsw><%for.i>][{1,+,1}<nuw><nsw><%for.j>][(-1 + (sext i32 (-1 + %p.deps) to i64))<nsw>]
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{1,+,1}<nuw><nsw><%for.i>][{1,+,1}<nuw><nsw><%for.j>][{1,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store float 1.000000e+00, ptr %arrayidx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i
 ; CHECK-NEXT:  AccessFunction: {(-4 + (4 * (sext i32 (-1 + %p.deps) to i64))<nsw> + ((sext i32 %a.deps to i64) * (-4 + (4 * (sext i32 (-1 + %p.cols) to i64))<nsw> + (4 * (sext i32 %a.cols to i64))<nsw>))),+,(4 * (sext i32 %a.deps to i64) * (sext i32 %a.cols to i64))}<%for.i>
 ; CHECK-NEXT:  Base offset: %a.base
-; CHECK-NEXT:  ArrayDecl[UnknownSize][((sext i32 %a.deps to i64) * (sext i32 %a.cols to i64))] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[0][{(-1 + (sext i32 (-1 + %p.deps) to i64) + ((sext i32 %a.deps to i64) * (-1 + (sext i32 (-1 + %p.cols) to i64) + (sext i32 %a.cols to i64)))),+,((sext i32 %a.deps to i64) * (sext i32 %a.cols to i64))}<%for.i>]
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{1,+,1}<nuw><nsw><%for.i>][{1,+,1}<nuw><nsw><%for.j>][{1,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
   %p.rows.ptr = getelementptr inbounds %struct.Mat, ptr %p, i64 0, i32 2

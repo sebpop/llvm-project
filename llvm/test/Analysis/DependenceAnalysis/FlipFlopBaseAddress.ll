@@ -2,6 +2,8 @@
 ; RUN: opt < %s -disable-output "-passes=print<da>" -aa-pipeline=basic-aa 2>&1 \
 ; RUN: | FileCheck %s
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ; Check that dependence analysis correctly handles flip-flop of base addresses.
 ; Bug 41488 - https://github.com/llvm/llvm-project/issues/41488
 
@@ -225,6 +227,7 @@ define void @non_invariant_baseptr_with_identical_obj2(ptr %A) {
 ; CHECK-NEXT:    da analyze - confused!
 ;
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 3, i64 100, i64 42, i64 42, i64 4)]
   br label %loop.i.header
 
 loop.i.header:

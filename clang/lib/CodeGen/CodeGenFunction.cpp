@@ -3370,3 +3370,67 @@ void CodeGenFunction::addInstToNewSourceAtom(llvm::Instruction *KeyInstruction,
     DI->addInstToCurrentSourceAtom(KeyInstruction, Backup);
   }
 }
+
+void CodeGenFunction::EmitArrayInfoAssume(const VarDecl &D, Address Addr) {
+  QualType Type = D.getType();
+
+  // Only handle array types.
+  const ArrayType *ArrayTy = getContext().getAsArrayType(Type);
+  if (!ArrayTy)
+    return;
+
+  SmallVector<llvm::Value *> Dimensions;
+  SmallVector<llvm::Value *> Strides;
+
+  // Calculate dimensions and strides for each array dimension (row-major
+  // order).
+  QualType ElementType = Type;
+  uint64_t CurrentStride = 1;
+
+  // First, collect all array dimensions from outermost to innermost.
+  SmallVector<const ArrayType *> ArrayTypes;
+  while (const ArrayType *AT = getContext().getAsArrayType(ElementType)) {
+    ArrayTypes.push_back(AT);
+    ElementType = AT->getElementType();
+  }
+
+  // Get element size in bytes.
+  uint64_t ElementSize =
+      getContext().getTypeSizeInChars(ElementType).getQuantity();
+
+  // Build dimensions and strides from innermost to outermost (row-major).
+  for (int i = ArrayTypes.size() - 1; i >= 0; --i) {
+    const ArrayType *AT = ArrayTypes[i];
+
+    if (const ConstantArrayType *CAT = dyn_cast<ConstantArrayType>(AT)) {
+      // Fixed size array.
+      uint64_t DimSize = CAT->getZExtSize();
+      Dimensions.insert(Dimensions.begin(),
+                        llvm::ConstantInt::get(Int64Ty, DimSize));
+      Strides.insert(
+          Strides.begin(),
+          llvm::ConstantInt::get(Int64Ty, CurrentStride * ElementSize));
+      CurrentStride *= DimSize;
+    } else if (const VariableArrayType *VAT = dyn_cast<VariableArrayType>(AT)) {
+      // Variable length array - use runtime size.
+      llvm::Value *VlaSize = getVLASize(VAT).NumElts;
+      Dimensions.insert(Dimensions.begin(), VlaSize);
+      Strides.insert(
+          Strides.begin(),
+          llvm::ConstantInt::get(Int64Ty, CurrentStride * ElementSize));
+      // For VLA, we can't compute stride statically, so stop here.
+      break;
+    } else {
+      // Incomplete array or other cases - skip.
+      break;
+    }
+  }
+
+  if (!Dimensions.empty()) {
+    // Use the innermost stride as element size.
+    llvm::Value *ElementSizeValue =
+        llvm::ConstantInt::get(Int64Ty, ElementSize);
+    Builder.CreateArrayInfoAssumption(Addr.emitRawPointer(*this), Dimensions,
+                                      ElementSizeValue);
+  }
+}

@@ -5,6 +5,7 @@
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.6.0"
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
 
 ;;  for (long int i = 0; i < 50; i++) {
 ;;    A[i][i] = i;
@@ -26,6 +27,7 @@ define void @couple0(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
 ; CHECK-NEXT:    da analyze - none!
 ;
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 2, i64 100, i64 100, i64 4)]
   br label %for.body
 
 for.body:                                         ; preds = %entry, %for.body
@@ -495,7 +497,7 @@ for.end:                                          ; preds = %for.body
 
 
 ;;  for (long int i = 0; i <= 15; i++) {
-;;    A[3*i - 18][18 - i] = i;
+;;    A[3*i + 18][18 - i] = i;
 ;;    *B++ = A[i][i];
 
 define void @couple11(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
@@ -503,8 +505,7 @@ define void @couple11(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx2, align 4 --> Dst: store i32 %conv, ptr %arrayidx2, align 4
 ; CHECK-NEXT:    da analyze - none!
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx2, align 4 --> Dst: %0 = load i32, ptr %arrayidx4, align 4
-; CHECK-NEXT:    da analyze - flow [0|<] splitable!
-; CHECK-NEXT:    da analyze - split level = 1, iteration = 9!
+; CHECK-NEXT:    da analyze - none!
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx2, align 4 --> Dst: store i32 %0, ptr %B.addr.01, align 4
 ; CHECK-NEXT:    da analyze - confused!
 ; CHECK-NEXT:  Src: %0 = load i32, ptr %arrayidx4, align 4 --> Dst: %0 = load i32, ptr %arrayidx4, align 4
@@ -515,6 +516,7 @@ define void @couple11(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
 ; CHECK-NEXT:    da analyze - none!
 ;
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 2, i64 100, i64 100, i64 4)]
   br label %for.body
 
 for.body:                                         ; preds = %entry, %for.body
@@ -523,7 +525,7 @@ for.body:                                         ; preds = %entry, %for.body
   %conv = trunc i64 %i.02 to i32
   %sub = sub nsw i64 18, %i.02
   %mul = mul nsw i64 %i.02, 3
-  %sub1 = add nsw i64 %mul, -18
+  %sub1 = add nsw i64 %mul, 18
   %arrayidx2 = getelementptr inbounds [100 x i32], ptr %A, i64 %sub1, i64 %sub
   store i32 %conv, ptr %arrayidx2, align 4
   %arrayidx4 = getelementptr inbounds [100 x i32], ptr %A, i64 %i.02, i64 %i.02
@@ -540,7 +542,7 @@ for.end:                                          ; preds = %for.body
 
 
 ;;  for (long int i = 0; i <= 12; i++) {
-;;    A[3*i - 18][22 - i] = i;
+;;    A[3*i + 18][22 - i] = i;
 ;;    *B++ = A[i][i];
 
 define void @couple12(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
@@ -548,8 +550,7 @@ define void @couple12(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx2, align 4 --> Dst: store i32 %conv, ptr %arrayidx2, align 4
 ; CHECK-NEXT:    da analyze - none!
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx2, align 4 --> Dst: %0 = load i32, ptr %arrayidx4, align 4
-; CHECK-NEXT:    da analyze - flow [<] splitable!
-; CHECK-NEXT:    da analyze - split level = 1, iteration = 11!
+; CHECK-NEXT:    da analyze - none!
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx2, align 4 --> Dst: store i32 %0, ptr %B.addr.01, align 4
 ; CHECK-NEXT:    da analyze - confused!
 ; CHECK-NEXT:  Src: %0 = load i32, ptr %arrayidx4, align 4 --> Dst: %0 = load i32, ptr %arrayidx4, align 4
@@ -560,6 +561,7 @@ define void @couple12(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
 ; CHECK-NEXT:    da analyze - none!
 ;
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 2, i64 100, i64 100, i64 4)]
   br label %for.body
 
 for.body:                                         ; preds = %entry, %for.body
@@ -568,7 +570,7 @@ for.body:                                         ; preds = %entry, %for.body
   %conv = trunc i64 %i.02 to i32
   %sub = sub nsw i64 22, %i.02
   %mul = mul nsw i64 %i.02, 3
-  %sub1 = add nsw i64 %mul, -18
+  %sub1 = add nsw i64 %mul, 18
   %arrayidx2 = getelementptr inbounds [100 x i32], ptr %A, i64 %sub1, i64 %sub
   store i32 %conv, ptr %arrayidx2, align 4
   %arrayidx4 = getelementptr inbounds [100 x i32], ptr %A, i64 %i.02, i64 %i.02
@@ -585,7 +587,7 @@ for.end:                                          ; preds = %for.body
 
 
 ;;  for (long int i = 0; i < 12; i++) {
-;;    A[3*i - 18][22 - i] = i;
+;;    A[3*i + 18][22 - i] = i;
 ;;    *B++ = A[i][i];
 
 define void @couple13(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
@@ -612,7 +614,7 @@ for.body:                                         ; preds = %entry, %for.body
   %conv = trunc i64 %i.02 to i32
   %sub = sub nsw i64 22, %i.02
   %mul = mul nsw i64 %i.02, 3
-  %sub1 = add nsw i64 %mul, -18
+  %sub1 = add nsw i64 %mul, 18
   %arrayidx2 = getelementptr inbounds [100 x i32], ptr %A, i64 %sub1, i64 %sub
   store i32 %conv, ptr %arrayidx2, align 4
   %arrayidx4 = getelementptr inbounds [100 x i32], ptr %A, i64 %i.02, i64 %i.02
@@ -628,7 +630,7 @@ for.end:                                          ; preds = %for.body
 }
 
 ;;  for (long int i = 0; i < 100; i++) {
-;;    A[3*i - 18][18 - i][i] = i;
+;;    A[3*i + 18][18 - i][i] = i;
 ;;    *B++ = A[i][i][i];
 
 define void @couple14(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
@@ -636,7 +638,7 @@ define void @couple14(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx3, align 4 --> Dst: store i32 %conv, ptr %arrayidx3, align 4
 ; CHECK-NEXT:    da analyze - none!
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx3, align 4 --> Dst: %0 = load i32, ptr %arrayidx6, align 4
-; CHECK-NEXT:    da analyze - flow [0|<]!
+; CHECK-NEXT:    da analyze - none!
 ; CHECK-NEXT:  Src: store i32 %conv, ptr %arrayidx3, align 4 --> Dst: store i32 %0, ptr %B.addr.01, align 4
 ; CHECK-NEXT:    da analyze - confused!
 ; CHECK-NEXT:  Src: %0 = load i32, ptr %arrayidx6, align 4 --> Dst: %0 = load i32, ptr %arrayidx6, align 4
@@ -655,7 +657,7 @@ for.body:                                         ; preds = %entry, %for.body
   %conv = trunc i64 %i.02 to i32
   %sub = sub nsw i64 18, %i.02
   %mul = mul nsw i64 %i.02, 3
-  %sub1 = add nsw i64 %mul, -18
+  %sub1 = add nsw i64 %mul, 18
   %arrayidx3 = getelementptr inbounds [100 x [100 x i32]], ptr %A, i64 %sub1, i64 %sub, i64 %i.02
   store i32 %conv, ptr %arrayidx3, align 4
   %arrayidx6 = getelementptr inbounds [100 x [100 x i32]], ptr %A, i64 %i.02, i64 %i.02, i64 %i.02
@@ -672,7 +674,7 @@ for.end:                                          ; preds = %for.body
 
 
 ;;  for (long int i = 0; i < 100; i++) {
-;;    A[3*i - 18][22 - i][i] = i;
+;;    A[3*i + 18][22 - i][i] = i;
 ;;    *B++ = A[i][i][i];
 
 define void @couple15(ptr %A, ptr %B, i32 %n) nounwind uwtable ssp {
@@ -699,7 +701,7 @@ for.body:                                         ; preds = %entry, %for.body
   %conv = trunc i64 %i.02 to i32
   %sub = sub nsw i64 22, %i.02
   %mul = mul nsw i64 %i.02, 3
-  %sub1 = add nsw i64 %mul, -18
+  %sub1 = add nsw i64 %mul, 18
   %arrayidx3 = getelementptr inbounds [100 x [100 x i32]], ptr %A, i64 %sub1, i64 %sub, i64 %i.02
   store i32 %conv, ptr %arrayidx3, align 4
   %arrayidx6 = getelementptr inbounds [100 x [100 x i32]], ptr %A, i64 %i.02, i64 %i.02, i64 %i.02

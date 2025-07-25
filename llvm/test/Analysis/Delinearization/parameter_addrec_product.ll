@@ -34,29 +34,29 @@ define void @foo(ptr %A, ptr %p) {
 ; CHECK-NEXT:  In Loop with Header: bb4
 ; CHECK-NEXT:  AccessFunction: (4 * (({0,+,1}<nuw><nsw><%bb2> * %pval)<nsw> + {0,+,1}<nuw><nsw><%bb4>)<nsw>)<nsw>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%pval] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%bb2>][{0,+,1}<nuw><nsw><%bb4>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: %tmp11 = load float, ptr %tmp10, align 4
 ; CHECK-NEXT:  In Loop with Header: bb2
 ; CHECK-NEXT:  AccessFunction: (400 + ({0,+,4}<nuw><nsw><%bb2> * %pval))
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%pval] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%bb2>][100]
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%bb2>][{0,+,1}<nuw><nsw><%bb4>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store float %tmp12, ptr %tmp10, align 4
 ; CHECK-NEXT:  In Loop with Header: bb4
 ; CHECK-NEXT:  AccessFunction: (4 * (({0,+,1}<nuw><nsw><%bb2> * %pval)<nsw> + {0,+,1}<nuw><nsw><%bb4>)<nsw>)<nsw>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%pval] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%bb2>][{0,+,1}<nuw><nsw><%bb4>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store float %tmp12, ptr %tmp10, align 4
 ; CHECK-NEXT:  In Loop with Header: bb2
 ; CHECK-NEXT:  AccessFunction: (400 + ({0,+,4}<nuw><nsw><%bb2> * %pval))
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%pval] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%bb2>][100]
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%bb2>][{0,+,1}<nuw><nsw><%bb4>]
 ;
 bb:
   br label %bb2

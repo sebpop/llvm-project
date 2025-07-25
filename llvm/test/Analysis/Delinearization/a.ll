@@ -5,7 +5,7 @@
 ;   for (long i = 0; i < n; i++)
 ;     for (long j = 0; j < m; j++)
 ;       for (long k = 0; k < o; k++)
-;         A[2*i+3][3*j-4][5*k+7] = 1;
+;         A[2*i+3][3*j+4][5*k+7] = 1;
 ; }
 
 define void @foo(i64 %n, i64 %m, i64 %o, ptr nocapture %A) #0 {
@@ -27,24 +27,24 @@ define void @foo(i64 %n, i64 %m, i64 %o, ptr nocapture %A) #0 {
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %arrayidx11.us.us, align 4
 ; CHECK-NEXT:  In Loop with Header: for.k
-; CHECK-NEXT:  AccessFunction: {{\{\{\{}}(28 + (4 * (-4 + (3 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(12 * %o)}<%for.j>,+,20}<%for.k>
+; CHECK-NEXT:  AccessFunction: {{\{\{\{}}(28 + (4 * (4 + (3 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(12 * %o)}<%for.j>,+,20}<%for.k>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][%o] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{3,+,2}<nuw><%for.i>][{-4,+,3}<nw><%for.j>][{7,+,5}<nw><%for.k>]
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,2}<nuw><%for.i>][{4,+,3}<nw><%for.j>][{7,+,5}<nw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %arrayidx11.us.us, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j
-; CHECK-NEXT:  AccessFunction: {{\{\{}}(8 + ((4 + (12 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(12 * %o)}<%for.j>
+; CHECK-NEXT:  AccessFunction: {{\{\{}}(8 + ((36 + (12 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(12 * %o)}<%for.j>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][%o] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{3,+,2}<nuw><%for.i>][{1,+,3}<%for.j>][2]
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,2}<nuw><%for.i>][{4,+,3}<nw><%for.j>][{7,+,5}<nw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %arrayidx11.us.us, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i
-; CHECK-NEXT:  AccessFunction: {(8 + ((-8 + (24 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>
+; CHECK-NEXT:  AccessFunction: {(8 + ((24 + (24 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(%m * %o)] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[0][{(2 + ((-2 + (6 * %m)) * %o)),+,(2 * %m * %o)}<%for.i>]
+; CHECK-NEXT:  ArrayDecl with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,2}<nuw><%for.i>][{4,+,3}<nw><%for.j>][{7,+,5}<nw><%for.k>]
 ;
 entry:
   %cmp32 = icmp sgt i64 %n, 0
@@ -65,7 +65,7 @@ for.i:                     ; preds = %for.cond1.preheader.lr.ph, %for.inc15.us
   %mul8.us = shl i64 %i.033.us, 1
   %add9.us = add nsw i64 %mul8.us, 3
   %0 = mul i64 %add9.us, %m
-  %sub.us = add i64 %0, -4
+  %sub.us = add i64 %0, 4
   br i1 %cmp528, label %for.j, label %for.inc15.us
 
 for.inc12.us.us:                                  ; preds = %for.k

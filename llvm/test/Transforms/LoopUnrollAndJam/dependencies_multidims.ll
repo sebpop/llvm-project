@@ -8,6 +8,7 @@ target datalayout = "e-m:e-p:32:32-i64:64-v128:64:128-a:0:32-n32-S64"
 ; CHECK-NOT: %j.1 = phi
 define void @sub_sub_less(ptr noalias nocapture %A, i32 %N, ptr noalias nocapture readonly %B) {
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %A, i64 2, i64 100, i64 100, i64 4) ]
   %cmp = icmp sgt i32 %N, 0
   br i1 %cmp, label %for.outer, label %cleanup
 
@@ -49,6 +50,7 @@ cleanup:
 ; CHECK: %j.3 = phi
 define void @sub_sub_eq(ptr noalias nocapture %A, i32 %N, ptr noalias nocapture readonly %B) {
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %A, i64 2, i64 100, i64 100, i64 4) ]
   %cmp = icmp sgt i32 %N, 0
   br i1 %cmp, label %for.outer, label %cleanup
 
@@ -90,6 +92,7 @@ cleanup:
 ; CHECK: %j.3 = phi
 define void @sub_sub_more(ptr noalias nocapture %A, i32 %N, ptr noalias nocapture readonly %B) {
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %A, i64 2, i64 100, i64 100, i64 4) ]
   %cmp = icmp sgt i32 %N, 0
   br i1 %cmp, label %for.outer, label %cleanup
 
@@ -217,3 +220,5 @@ for.end:
 
 !1 = distinct !{!1, !2}
 !2 = !{!"llvm.loop.unroll_and_jam.disable"}
+
+declare void @llvm.assume(i1 noundef)

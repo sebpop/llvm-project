@@ -7,6 +7,8 @@
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.6.0"
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ;;  for (long int i = 0; i < n; i++) {
 ;;    for (long int j = 0; j < n; j++) {
 ;;      for (long int k = 0; k < n; k++) {
@@ -32,19 +34,20 @@ define void @p2(i64 %n, ptr %A, ptr %B) nounwind uwtable ssp {
 ;
 ; LIN-LABEL: 'p2'
 ; LIN-NEXT:  Src: store i64 %i.011, ptr %arrayidx8, align 8 --> Dst: store i64 %i.011, ptr %arrayidx8, align 8
-; LIN-NEXT:    da analyze - output [* * *]!
+; LIN-NEXT:    da analyze - none!
 ; LIN-NEXT:  Src: store i64 %i.011, ptr %arrayidx8, align 8 --> Dst: %0 = load i64, ptr %arrayidx17, align 8
-; LIN-NEXT:    da analyze - flow [* *|<]!
+; LIN-NEXT:    da analyze - flow [-3 -2]!
 ; LIN-NEXT:  Src: store i64 %i.011, ptr %arrayidx8, align 8 --> Dst: store i64 %0, ptr %B.addr.24, align 8
 ; LIN-NEXT:    da analyze - confused!
 ; LIN-NEXT:  Src: %0 = load i64, ptr %arrayidx17, align 8 --> Dst: %0 = load i64, ptr %arrayidx17, align 8
-; LIN-NEXT:    da analyze - input [* * *]!
+; LIN-NEXT:    da analyze - none!
 ; LIN-NEXT:  Src: %0 = load i64, ptr %arrayidx17, align 8 --> Dst: store i64 %0, ptr %B.addr.24, align 8
 ; LIN-NEXT:    da analyze - confused!
 ; LIN-NEXT:  Src: store i64 %0, ptr %B.addr.24, align 8 --> Dst: store i64 %0, ptr %B.addr.24, align 8
 ; LIN-NEXT:    da analyze - confused!
 ;
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 3, i64 100, i64 100, i64 100, i64 8)]
   %cmp10 = icmp sgt i64 %n, 0
   br i1 %cmp10, label %for.cond1.preheader.preheader, label %for.end26
 

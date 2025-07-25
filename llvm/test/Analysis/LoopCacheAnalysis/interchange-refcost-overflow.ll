@@ -1,5 +1,7 @@
 ; RUN: opt <  %s  -passes='print<loop-cache-cost>' -disable-output 2>&1 | FileCheck  %s
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ; For a loop with a very large iteration count, make sure the cost
 ; calculation does not overflow:
 ;
@@ -16,6 +18,7 @@
 
 define void @foo(i32 noundef %b) {
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @A, i64 3, i64 11, i64 11, i64 11, i64 4)]
   %0 = sext i32 %b to i64
   br label %outer.loop
 

@@ -5529,6 +5529,9 @@ private:
   llvm::Value *FormAArch64ResolverCondition(const FMVResolverOption &RO);
   llvm::Value *EmitAArch64CpuSupports(const CallExpr *E);
   llvm::Value *EmitAArch64CpuSupports(ArrayRef<StringRef> FeatureStrs);
+
+  /// Emit array info assume for array declarations.
+  void EmitArrayInfoAssume(const VarDecl &D, Address Addr);
 };
 
 inline DominatingLLVMValue::saved_type

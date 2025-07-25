@@ -16,6 +16,8 @@
 #ifndef LLVM_ANALYSIS_DELINEARIZATION_H
 #define LLVM_ANALYSIS_DELINEARIZATION_H
 
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/PassManager.h"
 
 namespace llvm {
@@ -25,6 +27,8 @@ class GetElementPtrInst;
 class Instruction;
 class ScalarEvolution;
 class SCEV;
+class Value;
+class Function;
 
 /// Compute the array dimensions Sizes from the set of Terms extracted from
 /// the memory access function of this SCEVAddRecExpr (second step of
@@ -43,7 +47,8 @@ void collectParametricTerms(ScalarEvolution &SE, const SCEV *Expr,
 /// (third step of delinearization).
 void computeAccessFunctions(ScalarEvolution &SE, const SCEV *Expr,
                             SmallVectorImpl<const SCEV *> &Subscripts,
-                            SmallVectorImpl<const SCEV *> &Sizes);
+                            SmallVectorImpl<const SCEV *> &Sizes,
+                            Instruction *Inst);
 /// Split this SCEVAddRecExpr into two vectors of SCEVs representing the
 /// subscripts and sizes of an array access.
 ///
@@ -110,7 +115,8 @@ void computeAccessFunctions(ScalarEvolution &SE, const SCEV *Expr,
 /// Overall, we have: A[][n][m], and the access function: A[j+k][2i][5i].
 void delinearize(ScalarEvolution &SE, const SCEV *Expr,
                  SmallVectorImpl<const SCEV *> &Subscripts,
-                 SmallVectorImpl<const SCEV *> &Sizes, const SCEV *ElementSize);
+                 SmallVectorImpl<const SCEV *> &Sizes, const SCEV *ElementSize,
+                 Instruction *Inst);
 
 /// Compute the dimensions of fixed size array from \Expr and save the results
 /// in \p Sizes.
@@ -139,7 +145,7 @@ bool findFixedSizeArrayDimensions(ScalarEvolution &SE, const SCEV *Expr,
 bool delinearizeFixedSizeArray(ScalarEvolution &SE, const SCEV *Expr,
                                SmallVectorImpl<const SCEV *> &Subscripts,
                                SmallVectorImpl<const SCEV *> &Sizes,
-                               const SCEV *ElementSize);
+                               const SCEV *ElementSize, Instruction *Inst);
 
 /// Gathers the individual index expressions from a GEP instruction.
 ///
@@ -155,6 +161,19 @@ bool getIndexExpressionsFromGEP(ScalarEvolution &SE,
                                 SmallVectorImpl<const SCEV *> &Subscripts,
                                 SmallVectorImpl<int> &Sizes);
 
+/// Tries to find array dimension information from llvm.assume calls with
+/// "array_info" operand bundles in the function.  Returns true if array
+/// dimensions were successfully extracted for the given base pointer.
+///
+/// \param SE The ScalarEvolution analysis to use.
+/// \param BasePtr The base pointer to find array info for.
+/// \param CtxI The instruction context for the search.
+/// \param Sizes Output vector to store the array dimension sizes.
+/// \returns true if array dimensions were found, false otherwise.
+bool tryGetArrayInfoFromAssumes(ScalarEvolution &SE, Value *BasePtr,
+                                const Instruction *CtxI,
+                                SmallVectorImpl<const SCEV *> &Sizes);
+
 /// Implementation of fixed size array delinearization. Try to delinearize
 /// access function for a fixed size multi-dimensional array, by deriving
 /// subscripts from GEP instructions. Returns true upon success and false
@@ -165,6 +184,31 @@ bool tryDelinearizeFixedSizeImpl(ScalarEvolution *SE, Instruction *Inst,
                                  const SCEV *AccessFn,
                                  SmallVectorImpl<const SCEV *> &Subscripts,
                                  SmallVectorImpl<int> &Sizes);
+
+/// Clear the delinearization cache.
+void clearDelinearizationCache();
+
+/// Check for function context switch and clear cache if needed.
+void checkAndClearCacheForFunction(const Function *F);
+
+/// Structure for caching delinearization results.
+struct DelinearizationCacheEntry {
+  SmallVector<const SCEV *, 4> Subscripts;
+  SmallVector<const SCEV *, 4> Sizes;
+  bool IsValid;
+
+  DelinearizationCacheEntry() : IsValid(false) {}
+  DelinearizationCacheEntry(ArrayRef<const SCEV *> S, ArrayRef<const SCEV *> Z)
+      : Subscripts(S.begin(), S.end()), Sizes(Z.begin(), Z.end()),
+        IsValid(true) {}
+
+  void print(raw_ostream &OS) const;
+};
+
+/// Get delinearization cache entry for an instruction.
+/// Returns nullptr if not found or invalid.
+const DelinearizationCacheEntry *
+getDelinearizationCacheEntry(Instruction *Inst);
 
 struct DelinearizationPrinterPass
     : public PassInfoMixin<DelinearizationPrinterPass> {

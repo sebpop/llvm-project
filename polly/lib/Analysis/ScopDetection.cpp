@@ -1006,7 +1006,8 @@ bool ScopDetection::computeAccessFunctions(
         Acc->DelinearizedSubscripts.push_back(AF);
       } else {
         llvm::computeAccessFunctions(SE, AF, Acc->DelinearizedSubscripts,
-                                     Shape->DelinearizedSizes);
+                                     Shape->DelinearizedSizes,
+                                     const_cast<Instruction *>(Insn));
         if (Acc->DelinearizedSubscripts.size() == 0)
           IsNonAffine = true;
       }

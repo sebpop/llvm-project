@@ -1269,6 +1269,34 @@ CallInst *IRBuilderBase::CreateDereferenceableAssumption(Value *PtrValue,
                           {DereferenceableOpB});
 }
 
+CallInst *IRBuilderBase::CreateArrayInfoAssumption(Value *BasePtr,
+                                                   ArrayRef<Value *> Dimensions,
+                                                   Value *ElementSize) {
+  Function *FnAssume = Intrinsic::getOrInsertDeclaration(
+      GetInsertBlock()->getModule(), Intrinsic::assume);
+
+  SmallVector<Value *> BundleOperands;
+  BundleOperands.push_back(BasePtr);
+
+  // Add rank.
+  Value *Rank =
+      ConstantInt::get(Type::getInt64Ty(getContext()), Dimensions.size());
+  BundleOperands.push_back(Rank);
+
+  // Add dimensions.
+  for (size_t i = 0; i < Dimensions.size(); ++i) {
+    BundleOperands.push_back(Dimensions[i]);
+  }
+
+  // Add element size.
+  BundleOperands.push_back(ElementSize);
+
+  // Create the assume call with operand bundle.
+  SmallVector<OperandBundleDef> Bundles;
+  Bundles.emplace_back("array_info", BundleOperands);
+  return CreateCall(FnAssume, ConstantInt::getTrue(getContext()), Bundles);
+}
+
 IRBuilderDefaultInserter::~IRBuilderDefaultInserter() = default;
 IRBuilderCallbackInserter::~IRBuilderCallbackInserter() = default;
 IRBuilderFolder::~IRBuilderFolder() = default;

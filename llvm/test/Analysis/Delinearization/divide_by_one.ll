@@ -8,7 +8,7 @@ target datalayout = "e-m:e-p:32:32-i1:32-i64:64-a:0-n32"
 ; void test1(unsigned char *dst, int stride, int bs) {
 ;   for (int r = bs; r >= 0; --r)
 ;     for (int c = 0; c < bs; ++c)
-;       dst[r * stride + c] = dst[(r + 1) * stride + c - 1];
+;       dst[r * stride + c] = dst[(r + 1) * stride + c + 1];
 ; }
 
 define void @test(ptr nocapture %dst, i32 %stride, i32 %bs) {
@@ -25,17 +25,17 @@ define void @test(ptr nocapture %dst, i32 %stride, i32 %bs) {
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: %0 = load i8, ptr %arrayidx, align 1
 ; CHECK-NEXT:  In Loop with Header: for.body3
-; CHECK-NEXT:  AccessFunction: {{\{\{}}(-1 + ((1 + %bs) * %stride)),+,(-1 * %stride)}<%for.cond1.preheader>,+,1}<nw><%for.body3>
+; CHECK-NEXT:  AccessFunction: {{\{\{}}(1 + ((1 + %bs) * %stride)),+,(-1 * %stride)}<%for.cond1.preheader>,+,1}<nw><%for.body3>
 ; CHECK-NEXT:  Base offset: %dst
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%stride] with elements of 1 bytes.
-; CHECK-NEXT:  ArrayRef[{(1 + %bs),+,-1}<nw><%for.cond1.preheader>][{-1,+,1}<nw><%for.body3>]
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
+; CHECK-NEXT:  ArrayRef[{(1 + %bs),+,-1}<nw><%for.cond1.preheader>][{1,+,1}<nuw><nsw><%for.body3>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: %0 = load i8, ptr %arrayidx, align 1
 ; CHECK-NEXT:  In Loop with Header: for.cond1.preheader
-; CHECK-NEXT:  AccessFunction: {(-2 + ((1 + %bs) * %stride) + %bs),+,(-1 * %stride)}<%for.cond1.preheader>
+; CHECK-NEXT:  AccessFunction: {(((1 + %bs) * %stride) + %bs),+,(-1 * %stride)}<%for.cond1.preheader>
 ; CHECK-NEXT:  Base offset: %dst
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%stride] with elements of 1 bytes.
-; CHECK-NEXT:  ArrayRef[{(1 + %bs),+,-1}<nw><%for.cond1.preheader>][(-2 + %bs)]
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
+; CHECK-NEXT:  ArrayRef[{(1 + %bs),+,-1}<nw><%for.cond1.preheader>][{1,+,1}<nuw><nsw><%for.body3>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: %arrayidx7 = getelementptr inbounds i8, ptr %dst, i32 %add6
 ; CHECK-NEXT:  In Loop with Header: for.body3
@@ -51,15 +51,15 @@ define void @test(ptr nocapture %dst, i32 %stride, i32 %bs) {
 ; CHECK-NEXT:  In Loop with Header: for.body3
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}(%stride * %bs),+,(-1 * %stride)}<%for.cond1.preheader>,+,1}<nsw><%for.body3>
 ; CHECK-NEXT:  Base offset: %dst
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%stride] with elements of 1 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
 ; CHECK-NEXT:  ArrayRef[{%bs,+,-1}<nsw><%for.cond1.preheader>][{0,+,1}<nuw><nsw><%for.body3>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i8 %0, ptr %arrayidx7, align 1
 ; CHECK-NEXT:  In Loop with Header: for.cond1.preheader
 ; CHECK-NEXT:  AccessFunction: {(-1 + ((1 + %stride) * %bs)),+,(-1 * %stride)}<%for.cond1.preheader>
 ; CHECK-NEXT:  Base offset: %dst
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%stride] with elements of 1 bytes.
-; CHECK-NEXT:  ArrayRef[{%bs,+,-1}<nsw><%for.cond1.preheader>][(-1 + %bs)]
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
+; CHECK-NEXT:  ArrayRef[{%bs,+,-1}<nsw><%for.cond1.preheader>][{0,+,1}<nuw><nsw><%for.body3>]
 ;
 entry:
   %cmp20 = icmp sgt i32 %bs, -1
@@ -76,7 +76,7 @@ for.cond1.preheader:
 for.body3.lr.ph:
   %add = add nsw i32 %r.021, 1
   %mul = mul nsw i32 %add, %stride
-  %add4 = add i32 %mul, -1
+  %add4 = add i32 %mul, 1
   %mul5 = mul nsw i32 %r.021, %stride
   br label %for.body3
 

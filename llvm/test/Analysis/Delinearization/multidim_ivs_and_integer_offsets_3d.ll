@@ -6,7 +6,7 @@
 ;   for (long i = 0; i < n; i++)
 ;     for (long j = 0; j < m; j++)
 ;       for (long k = 0; k < o; k++)
-;         A[i+3][j-4][k+7] = 1.0;
+;         A[i+3][j+4][k+7] = 1.0;
 ; }
 
 define void @foo(i64 %n, i64 %m, i64 %o, ptr %A) {
@@ -28,24 +28,24 @@ define void @foo(i64 %n, i64 %m, i64 %o, ptr %A) {
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %idx, align 8
 ; CHECK-NEXT:  In Loop with Header: for.k
-; CHECK-NEXT:  AccessFunction: {{\{\{\{}}(56 + (8 * (-4 + (3 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(8 * %o)}<%for.j>,+,8}<%for.k>
+; CHECK-NEXT:  AccessFunction: {{\{\{\{}}(56 + (8 * (4 + (3 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(8 * %o)}<%for.j>,+,8}<%for.k>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][%o] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.i>][{-4,+,1}<nsw><%for.j>][{7,+,1}<nuw><nsw><%for.k>]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.i>][{4,+,1}<nuw><nsw><%for.j>][{7,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %idx, align 8
 ; CHECK-NEXT:  In Loop with Header: for.j
-; CHECK-NEXT:  AccessFunction: {{\{\{}}(48 + ((-24 + (24 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(8 * %o)}<%for.j>
+; CHECK-NEXT:  AccessFunction: {{\{\{}}(48 + ((40 + (24 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>,+,(8 * %o)}<%for.j>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][%o] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.i>][{-3,+,1}<%for.j>][6]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.i>][{4,+,1}<nuw><nsw><%for.j>][{7,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %idx, align 8
 ; CHECK-NEXT:  In Loop with Header: for.i
-; CHECK-NEXT:  AccessFunction: {(48 + ((-32 + (32 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>
+; CHECK-NEXT:  AccessFunction: {(48 + ((32 + (32 * %m)) * %o)),+,(8 * %m * %o)}<%for.i>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(%m * %o)] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[0][{(6 + ((-4 + (4 * %m)) * %o)),+,(%m * %o)}<%for.i>]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.i>][{4,+,1}<nuw><nsw><%for.j>][{7,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
   br label %for.i
@@ -62,7 +62,7 @@ for.k:
   %k = phi i64 [ 0, %for.j ], [ %k.inc, %for.k.inc ]
   %offset0 = add nsw i64 %i, 3
   %subscript0 = mul i64 %offset0, %m
-  %offset1 = add nsw i64 %j, -4
+  %offset1 = add nsw i64 %j, 4
   %subscript1 = add i64 %offset1, %subscript0
   %subscript2 = mul i64 %subscript1, %o
   %offset2 = add nsw i64 %k, 7

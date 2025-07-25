@@ -1,6 +1,8 @@
 ; RUN: opt < %s  -cache-line-size=32 -passes='print<loop-cache-cost>' -disable-output 2>&1 | FileCheck -check-prefix=SMALLER-CACHELINE %s
 ; RUN: opt < %s  -cache-line-size=256 -passes='print<loop-cache-cost>' -disable-output 2>&1 | FileCheck -check-prefix=LARGER-CACHELINE %s
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ;; This test is similar to test/Analysis/LoopCacheAnalysis/PowerPC/compute-cost.ll,
 ;; with differences that it tests the scenarios where an option for cache line size is
 ;; specified with different values.
@@ -51,6 +53,7 @@ for.end:                                          ; preds = %for.cond
 
 define dso_local void @handle_to_ptr_2(i1 %b0, i1 %b1, i1 %b2) {
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @data, i64 3, i64 2, i64 4, i64 18, i64 4)]
   br label %for.cond
 
 for.cond:

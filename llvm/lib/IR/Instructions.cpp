@@ -615,13 +615,26 @@ CallBase *CallBase::removeOperandBundle(CallBase *CB, uint32_t ID,
 }
 
 bool CallBase::hasReadingOperandBundles() const {
+
+  // Special case: assume statements with array_info bundles should be preserved
+  // for loop optimization purposes.
+  if (getIntrinsicID() == Intrinsic::assume) {
+    for (unsigned i = 0, e = getNumOperandBundles(); i != e; ++i) {
+      auto Bundle = getOperandBundleAt(i);
+      // Preserve assumes with array_info bundles.
+      if (Bundle.getTagName() == "array_info")
+        return true;
+    }
+    // Regular assumes without array_info can still be optimized.
+    return false;
+  }
+
   // Implementation note: this is a conservative implementation of operand
   // bundle semantics, where *any* non-assume operand bundle (other than
   // ptrauth) forces a callsite to be at least readonly.
   return hasOperandBundlesOtherThan({LLVMContext::OB_ptrauth,
                                      LLVMContext::OB_kcfi,
-                                     LLVMContext::OB_convergencectrl}) &&
-         getIntrinsicID() != Intrinsic::assume;
+                                     LLVMContext::OB_convergencectrl});
 }
 
 bool CallBase::hasClobberingOperandBundles() const {

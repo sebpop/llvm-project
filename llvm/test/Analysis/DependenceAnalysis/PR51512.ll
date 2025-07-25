@@ -4,6 +4,7 @@
 
 ; Check that the testcase does not crash the compiler.
 ; See https://github.com/llvm/llvm-project/issues/51512 for details.
+declare void @llvm.assume(i1 noundef) willreturn nounwind
 
 define void @foo() {
 ; CHECK-LABEL: 'foo'
@@ -16,6 +17,7 @@ define void @foo() {
 ;
 bb:
   %alloca = alloca [2 x [5 x i32]], align 1
+  call void @llvm.assume(i1 true) ["array_info"(ptr %alloca, i64 2, i64 2, i64 5, i64 4)]
   br label %outerloop.header
 
 outerloop.header:                                              ; preds = %outerloop.latch, %bb

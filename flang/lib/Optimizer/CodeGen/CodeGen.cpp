@@ -263,6 +263,107 @@ public:
 };
 } // namespace
 
+// Helper function to emit array info assumes for array allocations.
+static void emitArrayInfoAssume(mlir::ConversionPatternRewriter &rewriter,
+                                mlir::Location loc, mlir::LLVM::AllocaOp alloca,
+                                fir::SequenceType seqTy,
+                                mlir::ValueRange shapeOperands,
+                                const fir::LLVMTypeConverter &typeConverter) {
+  // Only emit assumes for arrays with known dimensions.
+  if (seqTy.getConstantRows() != static_cast<int64_t>(seqTy.getShape().size()))
+    return;
+
+  // Get the assume intrinsic.
+  auto module = alloca->getParentOfType<mlir::ModuleOp>();
+  auto assumeFunc = module.lookupSymbol<mlir::LLVM::LLVMFuncOp>("llvm.assume");
+  if (!assumeFunc) {
+    auto funcTy = mlir::LLVM::LLVMFunctionType::get(
+        mlir::LLVM::LLVMVoidType::get(rewriter.getContext()),
+        {mlir::IntegerType::get(rewriter.getContext(), 1)});
+    assumeFunc =
+        mlir::OpBuilder::atBlockEnd(module.getBody())
+            .create<mlir::LLVM::LLVMFuncOp>(loc, "llvm.assume", funcTy);
+  }
+
+  // Create operand bundle for array info.
+  llvm::SmallVector<mlir::Value> bundleOperands;
+  bundleOperands.push_back(alloca.getResult());
+
+  // Add rank.
+  auto rank = rewriter.create<mlir::LLVM::ConstantOp>(
+      loc, mlir::IntegerType::get(rewriter.getContext(), 64),
+      rewriter.getI64IntegerAttr(seqTy.getShape().size()));
+  bundleOperands.push_back(rank);
+
+  // Add dimensions (convert Fortran column-major to C row-major.)
+  const auto &shape = seqTy.getShape();
+
+  // Calculate the actual element size in bytes.
+  mlir::Type elementType = seqTy.getEleTy();
+
+  // Get the converted LLVM type for the element.
+  mlir::Type llvmElementType = typeConverter.convertType(elementType);
+
+  // Get the data layout to calculate type size.
+  auto dataLayout = mlir::DataLayout::closest(alloca);
+
+  // Calculate element size in bytes using the data layout.
+  llvm::TypeSize elementSizeTS = dataLayout.getTypeSize(llvmElementType);
+  uint64_t elementSize = elementSizeTS.getFixedValue();
+
+  // Reverse the Fortran dimensions to get row-major order.
+  for (int i = shape.size() - 1; i >= 0; --i) {
+    auto dim = rewriter.create<mlir::LLVM::ConstantOp>(
+        loc, mlir::IntegerType::get(rewriter.getContext(), 64),
+        rewriter.getI64IntegerAttr(shape[i]));
+    bundleOperands.push_back(dim);
+  }
+
+  // Add element size at the end.
+  auto elementSizeValue = rewriter.create<mlir::LLVM::ConstantOp>(
+      loc, mlir::IntegerType::get(rewriter.getContext(), 64),
+      rewriter.getI64IntegerAttr(elementSize));
+  bundleOperands.push_back(elementSizeValue);
+
+  // Create the assume call with operand bundle.
+  auto trueVal = rewriter.create<mlir::LLVM::ConstantOp>(
+      loc, mlir::IntegerType::get(rewriter.getContext(), 1),
+      rewriter.getBoolAttr(true));
+
+  auto bundleTagsAttr =
+      rewriter.getArrayAttr({rewriter.getStringAttr("array_info")});
+
+  // Create ArrayRef for operand bundle operands.
+  std::array<mlir::ValueRange, 1> opBundleOperandsStorage = {bundleOperands};
+  llvm::ArrayRef<mlir::ValueRange> opBundleOperands = opBundleOperandsStorage;
+
+  // Create the call with operand bundle using the proper builder.
+  rewriter.create<mlir::LLVM::CallOp>(
+      loc,
+      /*results=*/mlir::TypeRange{},
+      /*var_callee_type=*/nullptr,
+      /*callee=*/mlir::SymbolRefAttr::get(assumeFunc),
+      /*callee_operands=*/mlir::ValueRange{trueVal},
+      /*fastmathFlags=*/mlir::LLVM::FastmathFlagsAttr{},
+      /*CConv=*/mlir::LLVM::CConvAttr{},
+      /*TailCallKind=*/mlir::LLVM::TailCallKindAttr{},
+      /*memory_effects=*/nullptr,
+      /*convergent=*/nullptr,
+      /*no_unwind=*/nullptr,
+      /*will_return=*/nullptr,
+      /*op_bundle_operands=*/opBundleOperands,
+      /*op_bundle_tags=*/bundleTagsAttr,
+      /*arg_attrs=*/nullptr,
+      /*res_attrs=*/nullptr,
+      /*no_inline=*/nullptr,
+      /*always_inline=*/nullptr,
+      /*inline_hint=*/nullptr,
+      /*access_groups=*/nullptr,
+      /*alias_scopes=*/nullptr,
+      /*noalias_scopes=*/nullptr,
+      /*tbaa=*/nullptr);
+}
+
 namespace {
 /// convert to LLVM IR dialect `alloca`
 struct AllocaOpConversion : public fir::FIROpConversion<fir::AllocaOp> {
@@ -351,6 +452,13 @@ struct AllocaOpConversion : public fir::FIROpConversion<fir::AllocaOp> {
     if (alloc.getBindcName())
       llvmAlloc->setDiscardableAttr(alloc.getBindcNameAttrName(),
                                     alloc.getBindcNameAttr());
+
+    // Emit array info assume for array allocations.
+    if (auto seqTy = mlir::dyn_cast<fir::SequenceType>(
+            fir::unwrapRefType(alloc.getType()))) {
+      emitArrayInfoAssume(rewriter, loc, llvmAlloc, seqTy, operands, lowerTy());
+    }
+
     if (allocaAs == programAs) {
       rewriter.replaceOp(alloc, llvmAlloc);
     } else {

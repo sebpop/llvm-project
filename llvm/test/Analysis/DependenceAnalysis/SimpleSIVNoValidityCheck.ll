@@ -25,7 +25,7 @@ define void @t1(i32 signext %n, i32 signext %m, ptr %a) {
 ; LIN-NEXT:  Src: %6 = load i32, ptr %arrayidx7, align 4 --> Dst: store i32 %6, ptr %arrayidx11, align 4
 ; LIN-NEXT:    da analyze - anti [* *|<]!
 ; LIN-NEXT:  Src: store i32 %6, ptr %arrayidx11, align 4 --> Dst: store i32 %6, ptr %arrayidx11, align 4
-; LIN-NEXT:    da analyze - output [* *]!
+; LIN-NEXT:    da analyze - none!
 ;
 entry:
   %0 = zext i32 %m to i64
@@ -90,7 +90,7 @@ define void @t2(i32 signext %n, i32 signext %m, ptr %a) {
 ; LIN-NEXT:  Src: %21 = load i32, ptr %arrayidx28, align 4 --> Dst: store i32 %21, ptr %arrayidx38, align 4
 ; LIN-NEXT:    da analyze - anti [* * * * *|<]!
 ; LIN-NEXT:  Src: store i32 %21, ptr %arrayidx38, align 4 --> Dst: store i32 %21, ptr %arrayidx38, align 4
-; LIN-NEXT:    da analyze - output [* * * * *]!
+; LIN-NEXT:    da analyze - none!
 ;
 entry:
   %0 = zext i32 %n to i64
@@ -220,7 +220,7 @@ define void @t3(i64 %n, i64 %m, i64 %lb, ptr %a) {
 ; LIN-NEXT:  Src: %2 = load i32, ptr %arrayidx6, align 4 --> Dst: store i32 %2, ptr %arrayidx8, align 4
 ; LIN-NEXT:    da analyze - anti [* *|<]!
 ; LIN-NEXT:  Src: store i32 %2, ptr %arrayidx8, align 4 --> Dst: store i32 %2, ptr %arrayidx8, align 4
-; LIN-NEXT:    da analyze - output [* *]!
+; LIN-NEXT:    da analyze - none!
 ;
 entry:
   %0 = add i64 %n, -1

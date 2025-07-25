@@ -1721,6 +1721,10 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
   if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
     EmitVarAnnotations(&D, address.emitRawPointer(*this));
 
+  // Emit array info assume for array declarations.
+  if (HaveInsertPoint())
+    EmitArrayInfoAssume(D, address);
+
   // Make sure we call @llvm.lifetime.end.
   if (emission.useLifetimeMarkers())
     EHStack.pushCleanup<CallLifetimeEnd>(

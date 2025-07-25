@@ -2994,6 +2994,40 @@ benefits:
   simplifies and improves heuristics, e.g., for use "use-sensitive"
   optimizations.
 
+Array Info Operand Bundles
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Array info operand bundles are characterized by the ``"array_info"`` operand
+bundle tag. These operand bundles provide multi-dimensional array layout
+information to enable delinearization of array accesses in analysis passes.
+
+The operand bundle has the form:
+
+.. code-block:: llvm
+
+    "array_info"(ptr <base_pointer>, i64 <rank>, i64 <dim0>, i64 <dim1>, ..., i64 <element_size>)
+
+* The first operand is the base pointer to the array.
+* The second operand is the rank (number of dimensions) of the array.
+* The next ``rank`` operands are the sizes of each dimension.
+* The final operand is the element size in bytes.
+
+The total number of operands is ``rank + 3`` (base pointer + rank + dimensions + element size).
+
+For example, a 3D array ``int arr[2][4][8]`` would have the following array_info:
+
+.. code-block:: llvm
+
+    call void @llvm.assume(i1 true) ["array_info"(ptr %arr, i64 3, i64 2, i64 4, i64 8, i64 4)]
+
+This information enables LLVM's delinearization pass to convert linearized array
+access patterns back into multi-dimensional subscripts, enabling lower
+complexity data dependence tests, i.e., SIV and ZIV tests instead of MIV tests,
+and enabling loop optimizations in the presence of multi-dimensional arrays.
+
+The array_info operand bundle should be placed as close as possible to the
+array allocation or at the function entry point.
+
 .. _ob_preallocated:
 
 Preallocated Operand Bundles

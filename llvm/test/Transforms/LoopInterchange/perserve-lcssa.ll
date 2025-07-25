@@ -7,6 +7,8 @@
 @b = common dso_local global i64 0, align 4
 @c = common dso_local global [10 x [10 x i32 ]] zeroinitializer, align 16
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 
 define void @test_lcssa_indvars1()  {
 ; CHECK-LABEL: @test_lcssa_indvars1()
@@ -26,6 +28,7 @@ define void @test_lcssa_indvars1()  {
 ; CHECK-NEXT:    store i64 %v4.lcssa, ptr @a, align 4
 
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @c, i64 2, i64 10, i64 10, i64 4)]
   br label %outer.header
 
 outer.header:                                     ; preds = %outer.latch, %entry
@@ -73,6 +76,7 @@ define void @test_lcssa_indvars2()  {
 ; CHECK-NEXT:    store i64 %v4.lcssa, ptr @a, align 4
 
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @c, i64 2, i64 10, i64 10, i64 4)]
   br label %outer.header
 
 outer.header:                                     ; preds = %outer.latch, %entry
@@ -122,6 +126,7 @@ define void @test_lcssa_indvars3()  {
 
 
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @c, i64 2, i64 10, i64 10, i64 4)]
   br label %outer.header
 
 outer.header:                                     ; preds = %outer.latch, %entry

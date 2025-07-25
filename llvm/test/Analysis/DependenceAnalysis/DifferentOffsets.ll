@@ -2,6 +2,8 @@
 ; RUN: opt < %s -disable-output "-passes=print<da>" -aa-pipeline=basic-aa 2>&1 \
 ; RUN: | FileCheck %s
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ; The dependence test does not handle array accesses with difference between array accesses
 ; is not a multiple of the array element size.
 
@@ -163,6 +165,8 @@ define void @multidim_accesses(ptr %A) {
 ;         *idx1 = 1;
 ;      }
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 3, i64 256, i64 256, i64 256, i64 8)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 3, i64 256, i64 256, i64 256, i64 4)]
   br label %for.i
 
 for.i:

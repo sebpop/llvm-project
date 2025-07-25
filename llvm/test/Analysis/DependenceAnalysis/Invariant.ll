@@ -2,6 +2,8 @@
 ; RUN: opt < %s -disable-output "-passes=print<da>" -aa-pipeline=basic-aa 2>&1 \
 ; RUN: | FileCheck %s
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ; Test for a bug, which caused an assert when an invalid
 ; SCEVAddRecExpr is created in addToCoefficient.
 
@@ -26,6 +28,7 @@ define float @foo(float %g, ptr %rr) nounwind {
 ; CHECK-NEXT:    da analyze - none!
 ;
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %rr, i64 2, i64 40, i64 40, i64 4)]
   br label %for.cond1.preheader
 
 for.cond1.preheader:

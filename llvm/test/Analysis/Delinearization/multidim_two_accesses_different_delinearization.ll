@@ -28,15 +28,15 @@ define void @foo(i64 %n, i64 %m, ptr %A) {
 ; CHECK-NEXT:  In Loop with Header: for.j
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}0,+,(8 * %m)}<%for.i>,+,8}<%for.j>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m] with elements of 8 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i>][{0,+,1}<nuw><nsw><%for.j>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %arrayidx, align 8
 ; CHECK-NEXT:  In Loop with Header: for.i
 ; CHECK-NEXT:  AccessFunction: {(-8 + (8 * %m)),+,(8 * %m)}<%for.i>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[{1,+,1}<nuw><nsw><%for.i>][-1]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i>][{0,+,1}<nuw><nsw><%for.j>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: %arrayidx1 = getelementptr inbounds double, ptr %A, i64 %vlaarrayidx.sum1
 ; CHECK-NEXT:  In Loop with Header: for.j
@@ -52,13 +52,15 @@ define void @foo(i64 %n, i64 %m, ptr %A) {
 ; CHECK-NEXT:  In Loop with Header: for.j
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}0,+,8}<%for.i>,+,(8 * %n)}<%for.j>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%n] with elements of 8 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.j>][{0,+,1}<nuw><nsw><%for.i>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %arrayidx1, align 8
 ; CHECK-NEXT:  In Loop with Header: for.i
 ; CHECK-NEXT:  AccessFunction: {(8 * (-1 + %m) * %n),+,8}<%for.i>
-; CHECK-NEXT:  failed to delinearize
+; CHECK-NEXT:  Base offset: %A
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.j>][{0,+,1}<nuw><nsw><%for.i>]
 ;
 entry:
   br label %for.i

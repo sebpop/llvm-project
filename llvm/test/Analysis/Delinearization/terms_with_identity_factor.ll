@@ -12,6 +12,8 @@ define void @foo(i32 %m, i32 %n, ptr nocapture %A) #0 {
 ; CHECK-NEXT:  Inst: %arrayidx.us = getelementptr inbounds i8, ptr %A, i64 %3
 ; CHECK-NEXT:  In Loop with Header: for.body3.us
 ; CHECK-NEXT:  AccessFunction: 0
+; CHECK-NEXT:  Switched to new function foo, cleared delinearization cache
+; CHECK-NEXT:  Cache miss for instruction: %arrayidx.us = getelementptr inbounds i8, ptr %A, i64 %3
 ; CHECK-NEXT:  Strides:
 ; CHECK-NEXT:  Terms:
 ; CHECK-NEXT:  failed to delinearize
@@ -19,6 +21,7 @@ define void @foo(i32 %m, i32 %n, ptr nocapture %A) #0 {
 ; CHECK-NEXT:  Inst: %arrayidx.us = getelementptr inbounds i8, ptr %A, i64 %3
 ; CHECK-NEXT:  In Loop with Header: for.body3.lr.ph.us
 ; CHECK-NEXT:  AccessFunction: 0
+; CHECK-NEXT:  Cache miss for instruction: %arrayidx.us = getelementptr inbounds i8, ptr %A, i64 %3
 ; CHECK-NEXT:  Strides:
 ; CHECK-NEXT:  Terms:
 ; CHECK-NEXT:  failed to delinearize
@@ -26,140 +29,136 @@ define void @foo(i32 %m, i32 %n, ptr nocapture %A) #0 {
 ; CHECK-NEXT:  Inst: %4 = load i8, ptr %arrayidx.us, align 1
 ; CHECK-NEXT:  In Loop with Header: for.body3.us
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:  Cache miss for instruction: %4 = load i8, ptr %arrayidx.us, align 1
 ; CHECK-NEXT:  Strides:
-; CHECK-NEXT:  1
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    1
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Terms after sorting:
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Sizes:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  1
-; CHECK-NEXT:  Res: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  Sizes[i]: 1
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  Remainder: 0
-; CHECK-NEXT:  Res: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  Sizes[i]: (sext i32 %n to i64)
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  Remainder: {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-NEXT:    (sext i32 %n to i64)
+; CHECK-NEXT:    1
+; CHECK-NEXT:  Cache miss for instruction: %4 = load i8, ptr %arrayidx.us, align 1
+; CHECK-EMPTY:
+; CHECK-NEXT:  computeAccessFunctions for: %4 = load i8, ptr %arrayidx.us, align 1
+; CHECK-NEXT:  Linearized Memory Access Function: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:  Computing 'MemAccFn / Sizes[1]':
+; CHECK-NEXT:    MemAccFn: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:    Sizes[1]: 1
+; CHECK-NEXT:    Quotient (Leftover): {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:    Remainder (Subscript Access Function): 0
+; CHECK-NEXT:  Access function is within bounds, no normalization needed
+; CHECK-NEXT:  Computing 'MemAccFn / Sizes[0]':
+; CHECK-NEXT:    MemAccFn: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:    Sizes[0]: (sext i32 %n to i64)
+; CHECK-NEXT:    Quotient (Leftover): {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
+; CHECK-NEXT:    Remainder (Subscript Access Function): {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-NEXT:  Need normalization: access function: {0,+,1}<nuw><nsw><%for.body3.us> may overflow array's dimension upper bound: (sext i32 %n to i64)
+; CHECK-NEXT:    Normalizing access function: {0,+,1}<nuw><nsw><%for.body3.us> to fit within upper bound: (sext i32 %n to i64)
+; CHECK-NEXT:    Cannot normalize: non-constant components
+; CHECK-NEXT:  Subscripts push_back Remainder: {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-NEXT:  Subscripts push_back Res: {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
 ; CHECK-NEXT:  Subscripts:
-; CHECK-NEXT:  {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  {0,+,1}<nuw><nsw><%for.body3.us>
-; CHECK-NEXT:  succeeded to delinearize {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)][1]
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:    {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
+; CHECK-NEXT:    {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-EMPTY:
+; CHECK-NEXT:  Cache successful delinearization for instruction: %4 = load i8, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  Cache hit for instruction: %4 = load i8, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  tryDelinearizeFixedSizeImpl succeeded with 2 subscripts and 1 sizes: 1
+; CHECK-NEXT:  Using array_info results: 2 subscripts, 1 sizes
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: %4 = load i8, ptr %arrayidx.us, align 1
 ; CHECK-NEXT:  In Loop with Header: for.body3.lr.ph.us
 ; CHECK-NEXT:  AccessFunction: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Strides:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Terms after sorting:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Sizes:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  1
-; CHECK-NEXT:  Res: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Sizes[i]: 1
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Remainder: 0
-; CHECK-NEXT:  Res: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Sizes[i]: (sext i32 %n to i64)
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  Remainder: (zext i32 (-1 + %n) to i64)
-; CHECK-NEXT:  Subscripts:
-; CHECK-NEXT:  {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  (zext i32 (-1 + %n) to i64)
-; CHECK-NEXT:  succeeded to delinearize {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)][1]
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][(zext i32 (-1 + %n) to i64)]
+; CHECK-NEXT:  Cache hit for instruction: %4 = load i8, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  Cache hit for instruction: %4 = load i8, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  tryDelinearizeFixedSizeImpl succeeded with 2 subscripts and 1 sizes: 1
+; CHECK-NEXT:  Using array_info results: 2 subscripts, 1 sizes
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)] with elements of 1 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][(zext i32 (-1 + %n) to i64)]
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i8 %add4.us, ptr %arrayidx.us, align 1
 ; CHECK-NEXT:  In Loop with Header: for.body3.us
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:  Cache miss for instruction: store i8 %add4.us, ptr %arrayidx.us, align 1
 ; CHECK-NEXT:  Strides:
-; CHECK-NEXT:  1
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    1
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Terms after sorting:
-; CHECK-NEXT:  (sext i32 %n to i64)
+; CHECK-NEXT:    (sext i32 %n to i64)
 ; CHECK-NEXT:  Sizes:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  1
-; CHECK-NEXT:  Res: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  Sizes[i]: 1
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  Remainder: 0
-; CHECK-NEXT:  Res: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  Sizes[i]: (sext i32 %n to i64)
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  Remainder: {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-NEXT:    (sext i32 %n to i64)
+; CHECK-NEXT:    1
+; CHECK-NEXT:  Cache miss for instruction: store i8 %add4.us, ptr %arrayidx.us, align 1
+; CHECK-EMPTY:
+; CHECK-NEXT:  computeAccessFunctions for: store i8 %add4.us, ptr %arrayidx.us, align 1
+; CHECK-NEXT:  Linearized Memory Access Function: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:  Computing 'MemAccFn / Sizes[1]':
+; CHECK-NEXT:    MemAccFn: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:    Sizes[1]: 1
+; CHECK-NEXT:    Quotient (Leftover): {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:    Remainder (Subscript Access Function): 0
+; CHECK-NEXT:  Access function is within bounds, no normalization needed
+; CHECK-NEXT:  Computing 'MemAccFn / Sizes[0]':
+; CHECK-NEXT:    MemAccFn: {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
+; CHECK-NEXT:    Sizes[0]: (sext i32 %n to i64)
+; CHECK-NEXT:    Quotient (Leftover): {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
+; CHECK-NEXT:    Remainder (Subscript Access Function): {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-NEXT:  Need normalization: access function: {0,+,1}<nuw><nsw><%for.body3.us> may overflow array's dimension upper bound: (sext i32 %n to i64)
+; CHECK-NEXT:    Normalizing access function: {0,+,1}<nuw><nsw><%for.body3.us> to fit within upper bound: (sext i32 %n to i64)
+; CHECK-NEXT:    Cannot normalize: non-constant components
+; CHECK-NEXT:  Subscripts push_back Remainder: {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-NEXT:  Subscripts push_back Res: {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
 ; CHECK-NEXT:  Subscripts:
-; CHECK-NEXT:  {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  {0,+,1}<nuw><nsw><%for.body3.us>
-; CHECK-NEXT:  succeeded to delinearize {{\{\{}}0,+,(sext i32 %n to i64)}<nsw><%for.body3.lr.ph.us>,+,1}<nsw><%for.body3.us>
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)][1]
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:    {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
+; CHECK-NEXT:    {0,+,1}<nuw><nsw><%for.body3.us>
+; CHECK-EMPTY:
+; CHECK-NEXT:  Cache successful delinearization for instruction: store i8 %add4.us, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  Cache hit for instruction: store i8 %add4.us, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  tryDelinearizeFixedSizeImpl succeeded with 2 subscripts and 1 sizes: 1
+; CHECK-NEXT:  Using array_info results: 2 subscripts, 1 sizes
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i8 %add4.us, ptr %arrayidx.us, align 1
 ; CHECK-NEXT:  In Loop with Header: for.body3.lr.ph.us
 ; CHECK-NEXT:  AccessFunction: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Strides:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Terms:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Terms after sorting:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  Sizes:
-; CHECK-NEXT:  (sext i32 %n to i64)
-; CHECK-NEXT:  1
-; CHECK-NEXT:  Res: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Sizes[i]: 1
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Remainder: 0
-; CHECK-NEXT:  Res: {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  Sizes[i]: (sext i32 %n to i64)
-; CHECK-NEXT:  Res divided by Sizes[i]:
-; CHECK-NEXT:  Quotient: {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  Remainder: (zext i32 (-1 + %n) to i64)
-; CHECK-NEXT:  Subscripts:
-; CHECK-NEXT:  {0,+,1}<nuw><nsw><%for.body3.lr.ph.us>
-; CHECK-NEXT:  (zext i32 (-1 + %n) to i64)
-; CHECK-NEXT:  succeeded to delinearize {(zext i32 (-1 + %n) to i64),+,(sext i32 %n to i64)}<%for.body3.lr.ph.us>
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)][1]
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][(zext i32 (-1 + %n) to i64)]
+; CHECK-NEXT:  Cache hit for instruction: store i8 %add4.us, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  Cache hit for instruction: store i8 %add4.us, ptr %arrayidx.us, align 1
+; CHECK-NEXT:    ArrayDecl[(sext i32 %n to i64)] with elements of 1 bytes.
+; CHECK-NEXT:    ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
+; CHECK-NEXT:  tryDelinearizeFixedSizeImpl succeeded with 2 subscripts and 1 sizes: 1
+; CHECK-NEXT:  Using array_info results: 2 subscripts, 1 sizes
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][(sext i32 %n to i64)] with elements of 1 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][(zext i32 (-1 + %n) to i64)]
+; CHECK-NEXT:  ArrayDecl with elements of 1 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.body3.lr.ph.us>][{0,+,1}<nuw><nsw><%for.body3.us>]
 ;
 entry:
   br label %entry.split

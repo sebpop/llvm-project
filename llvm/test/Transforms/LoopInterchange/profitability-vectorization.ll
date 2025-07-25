@@ -13,6 +13,8 @@
 @E = dso_local global [256 x [256 x float]] zeroinitializer
 @F = dso_local global [256 x [256 x float]] zeroinitializer
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ; Check the behavior of the LoopInterchange cost-model. In the below code,
 ; exchanging the loops is not profitable in terms of cache, but it is necessary
 ; to vectorize the innermost loop.
@@ -39,6 +41,12 @@
 ; PROFIT-VEC-NEXT: ...
 define void @f() {
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @A, i64 2, i64 256, i64 256, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr @B, i64 2, i64 256, i64 256, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr @C, i64 2, i64 256, i64 256, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr @D, i64 2, i64 256, i64 256, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr @E, i64 2, i64 256, i64 256, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr @F, i64 2, i64 256, i64 256, i64 4)]
   br label %for.i.header
 
 for.i.header:
@@ -65,7 +73,7 @@ for.j.body:
   %add.2 = fadd float %add.1, %d
   %add.3 = fadd float %add.2, %e
   %add.4 = fadd float %add.3, %f
-  %a.1.index = getelementptr nuw inbounds [256 x [256 x float]], ptr @A, i64 %j, i64 %i
+  %a.1.index = getelementptr nuw inbounds [256 x [256 x float]], ptr @A, i64 0, i64 %j, i64 %i
   store float %add.4, ptr %a.1.index, align 4
   %j.next = add nuw nsw i64 %j, 1
   %cmp.j = icmp eq i64 %j.next, 256

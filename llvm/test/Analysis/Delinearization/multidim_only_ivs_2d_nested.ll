@@ -56,7 +56,7 @@ define void @foo(i64 %a, i64 %b) nounwind uwtable {
 ; CHECK-NEXT:  In Loop with Header: for.cond1.preheader
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}0,+,(-8 + (8 * %b))}<%for.cond1.preheader>,+,8}<%for.cond7.preheader.lr.ph.split.us.us>
 ; CHECK-NEXT:  Base offset: %vla.us
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%b] with elements of 8 bytes.
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.cond1.preheader>][{{\{\{}}0,+,-1}<nsw><%for.cond1.preheader>,+,1}<%for.cond7.preheader.lr.ph.split.us.us>]
 ;
 entry:

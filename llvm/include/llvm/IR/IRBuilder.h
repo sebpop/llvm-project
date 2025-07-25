@@ -2759,6 +2759,13 @@ public:
   /// assumption on the provided pointer.
   LLVM_ABI CallInst *CreateDereferenceableAssumption(Value *PtrValue,
                                                      Value *SizeValue);
+
+  /// Create an assume intrinsic call with array info operand bundle.
+  /// The bundle format is: "array_info"(ptr %base, i64 %rank, i64 %dim0_size,
+  /// i64 %dim1_size, ..., i64 %element_size)
+  CallInst *CreateArrayInfoAssumption(Value *BasePtr,
+                                      ArrayRef<Value *> Dimensions,
+                                      Value *ElementSize);
 };
 
 /// This provides a uniform API for creating instructions and inserting

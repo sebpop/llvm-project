@@ -8,6 +8,8 @@
 ;       A[i][j][k] = 1;
 ; }
 
+declare void @llvm.assume(i1) #0
+
 define void @a_i_j_k(ptr %a) {
 ; CHECK-LABEL: 'a_i_j_k'
 ; CHECK-NEXT:  Inst: %idx = getelementptr [8 x [32 x i32]], ptr %a, i32 %i, i32 %j, i32 %k
@@ -29,24 +31,25 @@ define void @a_i_j_k(ptr %a) {
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,1024}<nuw><nsw><%for.i.header>,+,128}<nw><%for.j.header>,+,4}<nw><%for.k>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}124,+,1024}<%for.i.header>,+,128}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{31,+,32}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {1020,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{255,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -107,24 +110,25 @@ define void @a_i_nj_k(ptr %a) {
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}896,+,1024}<nuw><nsw><%for.i.header>,+,-128}<nw><%for.j.header>,+,4}<nw><%for.k>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{7,+,-1}<nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}1020,+,1024}<%for.i.header>,+,-128}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{255,+,-32}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{7,+,-1}<nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {124,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{31,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{7,+,-1}<nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -207,45 +211,47 @@ define void @a_ijk_b_i2jk(ptr %a, ptr %b) {
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,1024}<nuw><nsw><%for.i.header>,+,256}<nw><%for.j.header>,+,4}<nw><%for.k>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][4][64] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl[42][4][64] with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %a.idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}124,+,1024}<%for.i.header>,+,256}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{31,+,64}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][4][64] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %a.idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {892,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{223,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][4][64] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %b.idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,1024}<nuw><nsw><%for.i.header>,+,256}<nw><%for.j.header>,+,4}<nw><%for.k>
 ; CHECK-NEXT:  Base offset: %b
-; CHECK-NEXT:  ArrayDecl[UnknownSize][4][64] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,2}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %b.idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}124,+,1024}<%for.i.header>,+,256}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %b
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{31,+,64}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,2}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %b.idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {892,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %b
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{223,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,2}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 4, i64 64, i64 4) ]
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %b, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -314,24 +320,25 @@ define void @a_i_2j1_k(ptr %a) {
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}128,+,1024}<nuw><nsw><%for.i.header>,+,256}<nw><%for.j.header>,+,4}<nw><%for.k>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][4][64] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><%for.j.header>][{32,+,1}<nw><%for.k>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{1,+,2}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}252,+,1024}<%for.i.header>,+,256}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{63,+,64}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{1,+,2}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {764,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{191,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{1,+,2}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -372,7 +379,7 @@ exit:
 ; void f(int A[][8][32]) {
 ;   for (i = 0; i < 42; i++)
 ;    for (j = 0; j < 2; j++)
-;     for (k = 0; k < 42; k++)
+;     for (k = 0; k < 32; k++)
 ;       A[i][3*j][k] = 1;
 ; }
 
@@ -396,23 +403,26 @@ define void @a_i_3j_k(ptr %a) {
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,1024}<nuw><nsw><%for.i.header>,+,384}<nw><%for.j.header>,+,4}<nw><%for.k>
-; CHECK-NEXT:  failed to delinearize
+; CHECK-NEXT:  Base offset: %a
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,3}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
-; CHECK-NEXT:  AccessFunction: {{\{\{}}164,+,1024}<%for.i.header>,+,384}<%for.j.header>
+; CHECK-NEXT:  AccessFunction: {{\{\{}}124,+,1024}<%for.i.header>,+,384}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{41,+,96}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,3}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
-; CHECK-NEXT:  AccessFunction: {548,+,1024}<%for.i.header>
+; CHECK-NEXT:  AccessFunction: {508,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{137,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,3}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -429,7 +439,7 @@ for.k:
   %idx = getelementptr [8 x [32 x i32]], ptr %a, i32 %i, i32 %j.subscript, i32 %k
   store i32 1, ptr %idx
   %k.inc = add i32 %k, 1
-  %cmp.k = icmp slt i32 %k.inc, 42
+  %cmp.k = icmp slt i32 %k.inc, 32
   br i1 %cmp.k, label %for.k, label %for.j.latch
 
 for.j.latch:
@@ -478,24 +488,25 @@ define void @a_i_j_3k(ptr %a) {
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,1024}<nuw><nsw><%for.i.header>,+,128}<nw><%for.j.header>,+,12}<nw><%for.k>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,3}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}108,+,1024}<%for.i.header>,+,128}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{27,+,32}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,3}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {1004,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{251,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,3}<nuw><nsw><%for.k>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -558,23 +569,26 @@ define void @a_i_j2k_i(ptr %a) {
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,1028}<%for.i.header>,+,256}<nw><%for.j.header>,+,128}<nw><%for.k>
-; CHECK-NEXT:  failed to delinearize
+; CHECK-NEXT:  Base offset: %a
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,2}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k>][{0,+,1}<nuw><nsw><%for.i.header>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}384,+,1028}<%for.i.header>,+,256}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][257] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{96,+,64}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,2}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k>][{0,+,1}<nuw><nsw><%for.i.header>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {640,+,1028}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{160,+,257}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,2}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k>][{0,+,1}<nuw><nsw><%for.i.header>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -640,24 +654,25 @@ define void @a_i_i_jk(ptr %a) {
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,1152}<%for.i.header>,+,4}<nw><%for.j.header>,+,4}<nw><%for.k>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][288] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}36,+,1152}<%for.i.header>,+,4}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][288] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{9,+,1}<nuw><nsw><%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {72,+,1152}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{18,+,288}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -725,31 +740,32 @@ define void @a_i_jk_l(ptr %a) {
 ; CHECK-NEXT:  In Loop with Header: for.l
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{\{}}0,+,1024}<nuw><nsw><%for.i.header>,+,128}<nw><%for.j.header>,+,128}<nw><%for.k.header>,+,4}<nw><%for.l>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
 ; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k.header>][{0,+,1}<nuw><nsw><%for.l>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.k.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}124,+,1024}<%for.i.header>,+,128}<%for.j.header>,+,128}<%for.k.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}31,+,32}<%for.j.header>,+,32}<%for.k.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k.header>][{0,+,1}<nuw><nsw><%for.l>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}508,+,1024}<%for.i.header>,+,128}<%for.j.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize][256] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{127,+,32}<%for.j.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k.header>][{0,+,1}<nuw><nsw><%for.l>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {892,+,1024}<%for.i.header>
 ; CHECK-NEXT:  Base offset: %a
-; CHECK-NEXT:  ArrayDecl[UnknownSize] with elements of 4 bytes.
-; CHECK-NEXT:  ArrayRef[{223,+,256}<%for.i.header>]
+; CHECK-NEXT:  ArrayDecl[42][8][32] with elements of 4 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{{\{\{}}0,+,1}<nuw><nsw><%for.j.header>,+,1}<nuw><nsw><%for.k.header>][{0,+,1}<nuw><nsw><%for.l>]
 ;
 entry:
+  call void @llvm.assume(i1 true) [ "array_info"(ptr %a, i64 3, i64 42, i64 8, i64 32, i64 4) ]
   br label %for.i.header
 
 for.i.header:
@@ -821,17 +837,23 @@ define void @non_divisible_by_element_size(ptr %a) {
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.k
 ; CHECK-NEXT:  AccessFunction: {{\{\{\{}}0,+,256}<nuw><nsw><%for.i.header>,+,32}<nw><%for.j.header>,+,1}<nw><%for.k>
-; CHECK-NEXT:  failed to delinearize
+; CHECK-NEXT:  Base offset: %a
+; CHECK-NEXT:  ArrayDecl[8] with elements of 32 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.j.header
 ; CHECK-NEXT:  AccessFunction: {{\{\{}}31,+,256}<%for.i.header>,+,32}<%for.j.header>
-; CHECK-NEXT:  failed to delinearize
+; CHECK-NEXT:  Base offset: %a
+; CHECK-NEXT:  ArrayDecl[8] with elements of 32 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store i32 1, ptr %idx, align 4
 ; CHECK-NEXT:  In Loop with Header: for.i.header
 ; CHECK-NEXT:  AccessFunction: {255,+,256}<%for.i.header>
-; CHECK-NEXT:  failed to delinearize
+; CHECK-NEXT:  Base offset: %a
+; CHECK-NEXT:  ArrayDecl[8] with elements of 32 bytes.
+; CHECK-NEXT:  ArrayRef[{0,+,1}<nuw><nsw><%for.i.header>][{0,+,1}<nuw><nsw><%for.j.header>][{0,+,1}<nuw><nsw><%for.k>]
 ;
 entry:
   br label %for.i.header

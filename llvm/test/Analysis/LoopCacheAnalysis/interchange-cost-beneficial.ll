@@ -1,5 +1,7 @@
 ; RUN: opt <  %s  -cache-line-size=64 -passes='print<loop-cache-cost>' -disable-output 2>&1 | FileCheck  %s
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ;; This test checks the effect of rounding cache cost to 1 when it is 
 ;; evaluated to 0 because at least 1 cache line is accessed by the loopnest.
 ;; It does not make sense to output that zero cache lines are used.
@@ -16,12 +18,17 @@
 ;        E[j] = 1
 ; }
 
-; CHECK: Loop 'for.j' has cost = 18
-; CHECK-NEXT: Loop 'for.i' has cost = 10
+; CHECK: Loop 'for.j' has cost = 12
+; CHECK-NEXT: Loop 'for.i' has cost = 8
 
 define void @test(ptr %A, ptr %B, ptr %C, ptr %D, ptr %E) {
 
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr %A, i64 2, i64 2, i64 3, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr %B, i64 1, i64 2, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr %C, i64 1, i64 2, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr %D, i64 1, i64 2, i64 4)]
+  call void @llvm.assume(i1 true) ["array_info"(ptr %E, i64 1, i64 2, i64 4)]
   br label %for.i.preheader.split
 
 for.i.preheader.split:                            ; preds = %for.i.preheader

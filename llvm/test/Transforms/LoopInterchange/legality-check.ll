@@ -5,6 +5,8 @@
 @a = dso_local global [256 x [256 x float]] zeroinitializer, align 4
 @b = dso_local global [20 x [20 x [20 x i32]]] zeroinitializer, align 4
 
+declare void @llvm.assume(i1 noundef) willreturn nounwind
+
 ;;  for (int n = 0; n < 100; ++n)
 ;;    for (int i = 0; i < 256; ++i)
 ;;      for (int j = 1; j < 256; ++j)
@@ -24,6 +26,7 @@
 
 define void @all_eq_lt() {
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @a, i64 2, i64 256, i64 256, i64 4)]
   br label %for.n.header
 
 for.n.header:
@@ -76,6 +79,7 @@ exit:
 
 define void @all_lt() {
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @a, i64 2, i64 256, i64 256, i64 4)]
   br label %for.i.header
 
 for.i.header:
@@ -118,6 +122,7 @@ exit:
 
 define void @lt_gt() {
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @a, i64 2, i64 256, i64 256, i64 4)]
   br label %for.i.header
 
 for.i.header:
@@ -162,6 +167,7 @@ exit:
 
 define void @eq_all_lt() {
 entry:
+  call void @llvm.assume(i1 true) ["array_info"(ptr @b, i64 3, i64 20, i64 20, i64 20, i64 4)]
   br label %for.i.header
 
 for.i.header:

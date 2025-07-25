@@ -58,6 +58,7 @@
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/CommandLine.h"
@@ -180,9 +181,21 @@ static void dumpExampleDependence(raw_ostream &OS, DependenceInfo *DA,
   for (inst_iterator SrcI = inst_begin(F), SrcE = inst_end(F); SrcI != SrcE;
        ++SrcI) {
     if (SrcI->mayReadOrWriteMemory()) {
+      // Skip llvm.assume intrinsics - they are metadata and should not appear
+      // in output.
+      if (auto *SrcIntrinsic = dyn_cast<IntrinsicInst>(&*SrcI)) {
+        if (SrcIntrinsic->getIntrinsicID() == Intrinsic::assume)
+          continue;
+      }
       for (inst_iterator DstI = SrcI, DstE = inst_end(F); DstI != DstE;
            ++DstI) {
         if (DstI->mayReadOrWriteMemory()) {
+          // Skip llvm.assume intrinsics - they are metadata and should not
+          // appear in output.
+          if (auto *DstIntrinsic = dyn_cast<IntrinsicInst>(&*DstI)) {
+            if (DstIntrinsic->getIntrinsicID() == Intrinsic::assume)
+              continue;
+          }
           OS << "Src:" << *SrcI << " --> Dst:" << *DstI << "\n";
           OS << "  da analyze - ";
           if (auto D = DA->depends(&*SrcI, &*DstI,
@@ -3411,6 +3424,42 @@ bool DependenceInfo::tryDelinearizeParametricSize(
     Instruction *Src, Instruction *Dst, const SCEV *SrcAccessFn,
     const SCEV *DstAccessFn, SmallVectorImpl<const SCEV *> &SrcSubscripts,
     SmallVectorImpl<const SCEV *> &DstSubscripts) {
+  // Check for function context switch and clear cache if needed.
+  checkAndClearCacheForFunction(Src->getFunction());
+
+  // Check cache for both instructions to avoid expensive parametric analysis.
+  const DelinearizationCacheEntry *SrcCacheEntry =
+      getDelinearizationCacheEntry(Src);
+  const DelinearizationCacheEntry *DstCacheEntry =
+      getDelinearizationCacheEntry(Dst);
+
+  if (SrcCacheEntry && DstCacheEntry) {
+    LLVM_DEBUG({
+      dbgs() << "Cache hit for both instructions in "
+                "tryDelinearizeParametricSize:\n";
+      dbgs() << "  Src: " << *Src << "\n";
+      SrcCacheEntry->print(dbgs());
+      dbgs() << "  Dst: " << *Dst << "\n";
+      DstCacheEntry->print(dbgs());
+    });
+
+    SrcSubscripts.clear();
+    SrcSubscripts.append(SrcCacheEntry->Subscripts.begin(),
+                         SrcCacheEntry->Subscripts.end());
+    DstSubscripts.clear();
+    DstSubscripts.append(DstCacheEntry->Subscripts.begin(),
+                         DstCacheEntry->Subscripts.end());
+
+    // Fail when there is only a subscript: that's a linearized access function.
+    if (SrcSubscripts.size() < 2 || DstSubscripts.size() < 2 ||
+        SrcSubscripts.size() != DstSubscripts.size())
+      return false;
+
+    return true;
+  }
+
+  LLVM_DEBUG(dbgs() << "Cache miss for tryDelinearizeParametricSize: Src="
+                    << *Src << ", Dst=" << *Dst << "\n");
 
   Value *SrcPtr = getLoadStorePointerOperand(Src);
   Value *DstPtr = getLoadStorePointerOperand(Dst);
@@ -3443,8 +3492,8 @@ bool DependenceInfo::tryDelinearizeParametricSize(
   findArrayDimensions(*SE, Terms, Sizes, ElementSize);
 
   // Third step: compute the access functions for each subscript.
-  computeAccessFunctions(*SE, SrcAR, SrcSubscripts, Sizes);
-  computeAccessFunctions(*SE, DstAR, DstSubscripts, Sizes);
+  computeAccessFunctions(*SE, SrcAR, SrcSubscripts, Sizes, Src);
+  computeAccessFunctions(*SE, DstAR, DstSubscripts, Sizes, Dst);
 
   // Fail when there is only a subscript: that's a linearized access function.
   if (SrcSubscripts.size() < 2 || DstSubscripts.size() < 2 ||
@@ -3527,6 +3576,17 @@ DependenceInfo::depends(Instruction *Src, Instruction *Dst,
   bool PossiblyLoopIndependent = true;
   if (Src == Dst)
     PossiblyLoopIndependent = false;
+
+  // Filter out llvm.assume intrinsics - they are metadata and should not
+  // appear in dependence analysis.
+  if (auto *SrcIntrinsic = dyn_cast<IntrinsicInst>(Src)) {
+    if (SrcIntrinsic->getIntrinsicID() == Intrinsic::assume)
+      return nullptr;
+  }
+  if (auto *DstIntrinsic = dyn_cast<IntrinsicInst>(Dst)) {
+    if (DstIntrinsic->getIntrinsicID() == Intrinsic::assume)
+      return nullptr;
+  }
 
   if (!(Src->mayReadOrWriteMemory() && Dst->mayReadOrWriteMemory()))
     // if both instructions don't reference memory, there's no dependence

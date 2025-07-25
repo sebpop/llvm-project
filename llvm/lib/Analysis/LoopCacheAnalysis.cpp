@@ -412,7 +412,7 @@ bool IndexedReference::delinearize(const LoopInfo &LI) {
       LLVM_DEBUG(dbgs().indent(2) << "In Loop '" << L->getName()
                                   << "', AccessFn: " << *AccessFn << "\n");
       llvm::delinearize(SE, AccessFn, Subscripts, Sizes,
-                        SE.getElementSize(&StoreOrLoadInst));
+                        SE.getElementSize(&StoreOrLoadInst), &StoreOrLoadInst);
     }
 
     if (Subscripts.empty() || Sizes.empty() ||

@@ -5649,7 +5649,25 @@ void Verifier::visitIntrinsicCall(Intrinsic::ID ID, CallBase &Call) {
               Call);
         continue;
       }
+      if (Elem.Tag->getKey() == "array_info") {
+        Check(ArgCount >= 4,
+              "array_info assumptions should have at least 4 arguments", Call);
+        Check(Call.getOperand(Elem.Begin)->getType()->isPointerTy(),
+              "first argument to array_info should be a pointer", Call);
+        Check(Call.getOperand(Elem.Begin + 1)->getType()->isIntegerTy(),
+              "second argument to array_info should be rank (integer)", Call);
+        // Check that remaining arguments are integers (dimensions and element
+        // size.)
+        for (unsigned i = Elem.Begin + 2; i < Elem.End; ++i) {
+          Check(
+              Call.getOperand(i)->getType()->isIntegerTy(),
+              "array_info dimension/element_size arguments should be integers",
+              Call);
+        }
+        return;
+      }
       Check(Elem.Tag->getKey() == "ignore" ||
+                Elem.Tag->getKey() == "array_info" ||
                 Attribute::isExistingAttribute(Elem.Tag->getKey()),
             "tags must be valid attribute names", Call);
       Attribute::AttrKind Kind =

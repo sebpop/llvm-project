@@ -6,7 +6,7 @@
 ;   for (long i = 0; i < n; i++)
 ;     for (long j = 0; j < m; j++)
 ;       for (long k = 0; k < o; k++)
-;         A[i+3][j-4][k+7] = 1.0;
+;         A[i+3][j+4][k+7] = 1.0;
 ; }
 
 define void @foo(i64 %n, i64 %m, i64 %o, i64 %p, ptr nocapture %A) nounwind uwtable {
@@ -28,24 +28,24 @@ define void @foo(i64 %n, i64 %m, i64 %o, i64 %p, ptr nocapture %A) nounwind uwta
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %arrayidx10.us.us, align 8
 ; CHECK-NEXT:  In Loop with Header: for.body6.us.us
-; CHECK-NEXT:  AccessFunction: {{\{\{\{}}(56 + (8 * (-4 + (3 * %m)) * (%o + %p))),+,(8 * (%o + %p) * %m)}<%for.cond4.preheader.lr.ph.us>,+,(8 * (%o + %p))}<%for.body6.lr.ph.us.us>,+,8}<%for.body6.us.us>
+; CHECK-NEXT:  AccessFunction: {{\{\{\{}}(56 + (8 * (4 + (3 * %m)) * (%o + %p))),+,(8 * (%o + %p) * %m)}<%for.cond4.preheader.lr.ph.us>,+,(8 * (%o + %p))}<%for.body6.lr.ph.us.us>,+,8}<%for.body6.us.us>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][(%o + %p)] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.cond4.preheader.lr.ph.us>][{-4,+,1}<nw><%for.body6.lr.ph.us.us>][{7,+,1}<nw><%for.body6.us.us>]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.cond4.preheader.lr.ph.us>][{4,+,1}<nw><%for.body6.lr.ph.us.us>][{7,+,1}<nw><%for.body6.us.us>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %arrayidx10.us.us, align 8
 ; CHECK-NEXT:  In Loop with Header: for.body6.lr.ph.us.us
-; CHECK-NEXT:  AccessFunction: {{\{\{}}(48 + (8 * %o) + (8 * (-4 + (3 * %m)) * (%o + %p))),+,(8 * (%o + %p) * %m)}<%for.cond4.preheader.lr.ph.us>,+,(8 * (%o + %p))}<%for.body6.lr.ph.us.us>
+; CHECK-NEXT:  AccessFunction: {{\{\{}}(48 + (8 * %o) + (8 * (4 + (3 * %m)) * (%o + %p))),+,(8 * (%o + %p) * %m)}<%for.cond4.preheader.lr.ph.us>,+,(8 * (%o + %p))}<%for.body6.lr.ph.us.us>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][%m][(%o + %p)] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.cond4.preheader.lr.ph.us>][{-4,+,1}<nw><%for.body6.lr.ph.us.us>][(6 + %o)]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.cond4.preheader.lr.ph.us>][{4,+,1}<nw><%for.body6.lr.ph.us.us>][{7,+,1}<nw><%for.body6.us.us>]
 ; CHECK-EMPTY:
 ; CHECK-NEXT:  Inst: store double 1.000000e+00, ptr %arrayidx10.us.us, align 8
 ; CHECK-NEXT:  In Loop with Header: for.cond4.preheader.lr.ph.us
-; CHECK-NEXT:  AccessFunction: {(48 + (8 * %o) + ((-40 + (32 * %m)) * (%o + %p))),+,(8 * (%o + %p) * %m)}<%for.cond4.preheader.lr.ph.us>
+; CHECK-NEXT:  AccessFunction: {(48 + (8 * %o) + ((24 + (32 * %m))<nuw><nsw> * (%o + %p))),+,(8 * (%o + %p) * %m)}<%for.cond4.preheader.lr.ph.us>
 ; CHECK-NEXT:  Base offset: %A
-; CHECK-NEXT:  ArrayDecl[UnknownSize][((%o + %p) * %m)] with elements of 8 bytes.
-; CHECK-NEXT:  ArrayRef[0][{(6 + ((-5 + (4 * %m)) * (%o + %p)) + %o),+,((%o + %p) * %m)}<%for.cond4.preheader.lr.ph.us>]
+; CHECK-NEXT:  ArrayDecl with elements of 8 bytes.
+; CHECK-NEXT:  ArrayRef[{3,+,1}<nuw><%for.cond4.preheader.lr.ph.us>][{4,+,1}<nw><%for.body6.lr.ph.us.us>][{7,+,1}<nw><%for.body6.us.us>]
 ;
 entry:
   %add = add nsw i64 %p, %o
@@ -66,7 +66,7 @@ for.cond4.preheader.lr.ph.us:                     ; preds = %for.inc14.us, %for.
   %i.023.us = phi i64 [ %inc15.us, %for.inc14.us ], [ 0, %for.cond1.preheader.lr.ph ]
   %add8.us = add nsw i64 %i.023.us, 3
   %0 = mul i64 %add8.us, %m
-  %sub.us = add i64 %0, -4
+  %sub.us = add i64 %0, 4
   br i1 %cmp518, label %for.body6.lr.ph.us.us, label %for.inc14.us
 
 for.inc11.us.us:                                  ; preds = %for.body6.us.us
